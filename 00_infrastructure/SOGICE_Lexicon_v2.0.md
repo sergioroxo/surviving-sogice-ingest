@@ -1,0 +1,635 @@
+# SurvivingSOGICE — SOGICE Lexicon v2.0
+
+**University of Bergen · SurvivingSOGICE PhD Research Archive**
+*Phase 0 Document · Living reference — grows with every ingestion batch*
+*Companion: SOGICE_Ontology_v3.0.md · PRD_v3.0.md*
+
+---
+
+## Changelog from v1.1
+
+- **Merged** Lexicon v1.1 with PRD v2.0 §6 seed content and relevant Term_More.md entries
+- **Structured for SOGICE Wikipedia** — each entry designed as an interconnected encyclopedia page with explicit linking to related terms, actors, legal instruments, and source documents
+- **Seven clusters** (C7 Pro-Trans-SOGICE now fully integrated)
+- **Attestation tiers** added to all multilingual variants
+- **New terms added:** Theophostic Prayer, Co-dependency (SOGICE), Set Free from Homosexuality, Sexual Restoration, Shemale, Trans Widow, Transmaxxing, Super Straight, Fatherless (as slur), Special Snowflake, Woke (anti-LGBTQ+), Norgay, additional Spanish-language regional slurs
+- **Boundary concept added:** AffirmativeOrExploratorySupport (Section 9)
+- **Terms flagged for Phase 1 documentation** carried forward from PRD v2.0 §6.4–6.5
+
+---
+
+## How to use this document
+
+Every entry defines a specific term, phrase, acronym, or coded expression in SOGICE discourse.
+
+**Entry structure:** Term / Cluster / Function / Definition / Promotional use rule / Related terms / Source
+
+**Linking model (SOGICE Wikipedia):** Each entry is designed to become an interconnected page on the public archive. When the Lexicon is rendered as a web frontend, every reference to another term, actor, or legal instrument becomes a clickable link. The `related_terms` field defines the link graph. The LLM ingestion system builds this graph: every document processed adds connections between terms, actors, and documents.
+
+**Visibility:** All entries are `research_contextualized` by default. Slurs and troll terms include mandatory framing statements (Section 8).
+
+---
+
+## SECTION 1 — SSA-Rhetoric (C1)
+
+**SSA** (Same-Sex Attraction)
+- Cluster: SSA-Rhetoric | Function: Euphemism
+- Definition: The foundational euphemism of SOGICE discourse. Replaces self-determined identity language (gay, lesbian, bisexual) with a clinical-sounding description of same-sex attraction as a symptom rather than an identity. The core gateway move: "You are not gay — you experience SSA" separates the person from the attraction so that change can be offered without appearing to attack the person. Used across pastoral, clinical, and policy SOGICE contexts. Preferred over "homosexuality" in contemporary SOGICE materials because it implies the attraction is something the person has rather than something the person is.
+- Promotional use rule: Tag only if source uses SSA to describe real people or advocate for SOGICE. Not if critiquing, defining, or reporting.
+- Related: → USSA, → SGA, → "Struggling with SSA"
+- Links to actors: IFTCC, NARTH, Courage International, Brothers Road
+- Links to legal: Used in IFTCC submissions opposing → Malta Ban, → Norway §270
+
+**USSA** (Unwanted Same-Sex Attraction)
+- Cluster: SSA-Rhetoric | Function: Euphemism
+- Definition: Extends SSA by adding the suppression frame. "Unwanted" presents same-sex attraction not merely as a symptom but as one the person actively wishes to eliminate. Individualizes what is structurally coercive — the "unwantedness" is produced by social, religious, and familial pressure, but the term locates the desire for change inside the person. Widely used by IFTCC and NARTH-affiliated materials to argue that SOGICE responds to client demand.
+- Promotional use rule: Tag when used promotionally to justify SOGICE practice.
+- Related: → SSA, → SGA, → Therapeutic Choice
+
+**SGA** (Same-Gender Attraction)
+- Cluster: SSA-Rhetoric | Function: Euphemism
+- Definition: LDS (Mormon) institutional variant of SSA. Functionally identical in rhetorical purpose but embedded in LDS theological language where "gender" carries specific doctrinal weight (eternal gender as part of divine identity). Used in official LDS materials and LDS-affiliated SOGICE programs. Note denomination in tagging.
+- Promotional use rule: Tag only if used promotionally in LDS SOGICE contexts.
+- Related: → SSA, → USSA
+
+**Ex-Gay**
+- Cluster: SSA-Rhetoric | Function: Euphemism / Identity label
+- Definition: Identity label asserted by people who claim to have changed their sexual orientation or now live in celibacy while previously identifying as gay. Functions as both personal claim and political argument — the existence of "ex-gays" is central to the policy argument against bans. Critics argue most people so describing themselves have suppressed rather than changed their attractions.
+- Promotional use rule: Tag when source promotes ex-gay identity as evidence of successful conversion.
+- Related: → Former Lesbian, → Overcomer, → Ex-Trans
+- Links to actors: X-Out-Loud, Restored Hope Network, Exodus International (legacy)
+
+**Former Lesbian**
+- Cluster: SSA-Rhetoric | Function: Euphemism
+- Definition: Identity label asserting that lesbian identity is a past temporal state rather than an ongoing orientation. The word "former" positions lesbian identity as a period that ended, not an intrinsic characteristic.
+- Related: → Ex-Gay, → Overcomer
+
+**Overcomer**
+- Cluster: SSA-Rhetoric | Function: Euphemism / Recruitment Frame
+- Definition: In-group self-description used within SOGICE communities. Draws on evangelical language of "overcoming" sin and spiritual struggle. Positions same-sex attraction as an obstacle to be defeated. Functions as a recruitment frame: conversion appears to offer community belonging and spiritual achievement.
+- Related: → Ex-Gay, → Freedom from SSA, → #overcominghomosexuality
+
+**Freedom from SSA**
+- Cluster: SSA-Rhetoric | Function: Pastoral Rhetoric
+- Definition: Ministry phrase for conversion goals. Frames same-sex attraction as captivity from which a person can be liberated through spiritual intervention. Inverts the human rights framework.
+- Related: → Overcomer, → Set Free from Homosexuality
+
+**Set Free from Homosexuality**
+- Cluster: SSA-Rhetoric | Function: Pastoral Rhetoric
+- Definition: Variant of Freedom from SSA with stronger liberation theology framing. Common in Pentecostal and charismatic SOGICE materials.
+- Related: → Freedom from SSA, → Deliverance
+
+**Struggling with SSA / Same-sex attraction struggle**
+- Cluster: SSA-Rhetoric | Function: Euphemism
+- Definition: Pastoral euphemism positioning homosexual orientation as a temporary spiritual or psychological struggle rather than a stable identity. The "struggle" framing implies the attraction is external to the self. Widely used in pastoral counseling, LDS materials, and evangelical testimonies.
+- Promotional use rule: Tag when used promotionally to describe SOGICE participants.
+- Related: → SSA, → USSA
+
+**Sexual Preference**
+- Cluster: SSA-Rhetoric | Function: Identity-Policing
+- Definition: Positions sexual orientation as a voluntary preference. The APA explicitly distinguishes these terms. Used to imply orientation is chosen and therefore changeable. Core to the Therapeutic Choice argument.
+- Related: → SSA, → Lifestyle Choice, → Therapeutic Choice
+
+**Lifestyle Choice**
+- Cluster: SSA-Rhetoric | Function: Identity-Policing
+- Definition: Frames LGBTQ+ identity as voluntary behavior. Denies immutability claims supporting civil rights protections.
+- Related: → Sexual Preference, → SSA
+
+**Mixed Attracted**
+- Cluster: SSA-Rhetoric | Function: Euphemism
+- Definition: Term for individuals with both same-sex and opposite-sex attractions, deployed to argue such persons should pursue heterosexual direction. Used to challenge orientation stability.
+- Promotional use rule: Tag when used to argue for SOGICE for bisexual people.
+
+**Adam and Eve, Not Adam and Steve**
+- Cluster: SSA-Rhetoric | Function: Pastoral Rhetoric / Political Slogan
+- Definition: Rhyming slogan asserting heterosexuality as the only divinely intended orientation. Functions as condensed theological argument and mobilization tool.
+- Related: → Biblical Masculinity/Femininity Restoration, → Gender-Essentialism
+
+**Invert / Sexual Inversion**
+- Cluster: SSA-Rhetoric / Pseudo-Science | Function: Pseudo-Diagnostic (historical)
+- Definition: Archaic late 19th/early 20th century pseudo-scientific term describing homosexuality as gender inversion. Continued use in contemporary documents is a False-Scientific-Authority marker.
+
+**Homophile**
+- Cluster: SSA-Rhetoric | Function: Euphemism (historical)
+- Definition: Pre-1970s alternative to "homosexual." Appears in some pastoral SOGICE materials using archaic clinical language to maintain pathologizing distance.
+
+**Change-Allowing Therapy**
+- Cluster: SSA-Rhetoric / Policy-Resistance | Function: Political Slogan
+- Definition: SOGICE rebranded using therapeutic neutrality language. Positions conversion therapy as respecting client autonomy. Used in policy-resistance to oppose bans.
+- Related: → Therapeutic Choice, → Congruence Therapy, → SAFE-T
+
+**Reintegrative Therapy**
+- Cluster: SSA-Rhetoric / Pseudo-Science | Function: Pseudo-Diagnostic
+- Definition: SOGICE practice name used by David Pickup. Claims to address underlying trauma as cause of same-sex attraction, framing conversion as trauma resolution.
+- Related: → Reparative Therapy, → Father Wound
+
+**Identity Exploration Therapy**
+- Cluster: SSA-Rhetoric / Policy-Resistance | Function: Euphemism
+- Definition: SOGICE rebranded using language from legitimate identity development frameworks. Obscures predetermined outcome. Critically linked to the → AffirmativeOrExploratorySupport boundary concept: pro-SOGICE actors invoke "exploration" language to claim exemption from bans.
+- Related: → Congruence Therapy, → AffirmativeOrExploratorySupport
+
+**Journey Out of Homosexuality**
+- Cluster: SSA-Rhetoric | Function: Pastoral Rhetoric
+- Definition: Ministry narrative framing conversion as a spiritual journey. Implies ongoing progress toward heterosexuality. Source documentation needed.
+- Related: → Freedom from SSA, → Overcomer
+
+---
+
+## SECTION 2 — Pastoral-Coercion (C2)
+
+**Sexual Brokenness**
+- Cluster: Pastoral-Coercion | Function: Pastoral Rhetoric
+- Definition: Theological framing of LGBTQ+ identity as spiritual pathology requiring healing. Unlike pseudo-science, makes no pretense of neutrality — explicitly theological. Survives in legislative contexts that ban clinical SOGICE but exempt "pastoral support."
+- Related: → Side B, → Truth in Love, → Emotional Healing
+- Links to actors: Courage International, True Freedom Trust
+
+**Side B**
+- Cluster: Pastoral-Coercion | Function: Moral-Purity Frame
+- Definition: Theological position that gay Christians are called to lifelong celibacy while retaining attractions. "Side A" = affirming relationships; "Side B" = celibacy. Pastoral-Coercion applies even without orientation change claims: suppression of intimacy is structurally identical, and belonging is conditional on abstinence.
+- Related: → Sexual Brokenness, → Living Chastely, → Love the Sinner
+
+**Truth in Love**
+- Cluster: Pastoral-Coercion | Function: Pastoral Rhetoric
+- Definition: Pastoral slogan (Ephesians 4:15) implying suppression of LGBTQ+ identity is compassion. Positions resistance to SOGICE as rejecting love.
+- Related: → Love the Sinner, → Sexual Brokenness
+
+**Love the Sinner**
+- Cluster: Pastoral-Coercion | Function: Pastoral Rhetoric
+- Definition: "Love the sinner, hate the sin" — separates "sinner" from "sin" (mirroring SSA's separation of person from attraction) to maintain fiction of affirmation while practicing rejection.
+- Related: → Truth in Love, → Side B
+
+**Prayer Ministry**
+- Cluster: Pastoral-Coercion | Function: Euphemism
+- Definition: Umbrella for liturgical SOGICE: laying on of hands, speaking in tongues, anointing, exorcism. Rebrands coercive practices as voluntary spiritual care. Identified as legislative loophole in UK.
+- Related: → Deliverance, → Exorcism, → Pastoral Support
+- Links to legal: → EC-UK-MOU (Pastoral Support exemption)
+
+**Pastoral Support (legislative loophole)**
+- Cluster: Pastoral-Coercion / Policy-Resistance | Function: Euphemism / Political Slogan
+- Definition: In UK ban debates, "pastoral support" became the framing to carve out exemptions. The argument: banning pastoral support criminalizes prayer. In practice, preserves significant SOGICE. Survivor advocate Jayne Ozanne identified this as the key loophole.
+- Related: → Prayer Ministry, → Criminalising Prayer, → PastoralCoercion-LegislativeLoophole
+- Links to legal: → EC-UK-MOU
+
+**Emotional Healing**
+- Cluster: Pastoral-Coercion | Function: Euphemism
+- Definition: Therapeutic-sounding language medicalizing pastoral conversion. Creates legislative loophole.
+- Related: → Sexual Restoration, → Prayer Ministry, → Sexual Brokenness
+
+**Sexual Restoration**
+- Cluster: Pastoral-Coercion | Function: Euphemism
+- Definition: Frames conversion therapy as restoring the person's sexuality to its "intended" state. Combines therapeutic and theological registers.
+- Related: → Emotional Healing, → Biblical Masculinity/Femininity Restoration
+
+**Biblical Masculinity/Femininity Restoration**
+- Cluster: Pastoral-Coercion | Function: Pastoral Rhetoric
+- Definition: Gender-essentialist framing positioning conversion as recovering "God-given" masculinity or femininity. Targets gender expression rather than orientation directly.
+- Related: → Gender-Essentialism, → Sexual Brokenness
+
+**Living Chastely / Unchaste Living**
+- Cluster: Pastoral-Coercion | Function: Euphemism
+- Definition: Courage International terminology. "Living chastely" = lifelong celibacy for LGBT Catholics. "Unchaste living" = same-sex relationships framed as spiritual disorder.
+- Related: → Side B, → Sexual Brokenness
+- Links to actors: Courage International
+
+**Epidemic of Loneliness**
+- Cluster: Pastoral-Coercion | Function: Pastoral Rhetoric
+- Definition: Framing LGBTQ+ identity as inherently isolating. Misrepresents social isolation caused by discrimination as consequence of identity itself.
+
+**Sexual Addiction Framework**
+- Cluster: Pastoral-Coercion / Pseudo-Science | Function: Pseudo-Diagnostic
+- Definition: Applying addiction language (compulsion, recovery, sobriety) to same-sex attraction. Positions gay identity as behavioral disorder. Used by some US therapeutic SOGICE actors.
+
+**Attachment Disorder Theory**
+- Cluster: Pastoral-Coercion / Pseudo-Science | Function: Pseudo-Diagnostic
+- Definition: Pseudo-psychological claim that same-sex attraction results from childhood attachment failure. Draws superficially on legitimate attachment theory (Bowlby, Ainsworth). Doctrinal basis documentation needed — distinguish Nicolosi from other frameworks.
+- Related: → Father Wound, → Mother Wound
+
+**Theophostic Prayer / Theophostic Ministry**
+- Cluster: Pastoral-Coercion | Function: Euphemism
+- Definition: Faith-based inner healing practice involving guided prayer to access and "heal" traumatic memories, including memories believed to cause same-sex attraction. Used in some SOGICE contexts as a spiritual healing modality. Distinct from standard pastoral prayer in its therapeutic claims.
+- Related: → Prayer Ministry, → Deliverance, → Bethel Sozo
+- Links to actors: Bethel Church / Bethel Sozo
+- Note: Flagged for Phase 1 documentation — need CHANGED Movement course vocabulary and Bethel Sozo promotional terms.
+
+**Co-dependency (SOGICE application)**
+- Cluster: Pastoral-Coercion / Pseudo-Science | Function: Pseudo-Diagnostic
+- Definition: The misapplication of co-dependency frameworks (originally from addiction treatment) to same-sex relationships. Frames same-sex partnerships as inherently co-dependent and unhealthy. Used in some therapeutic SOGICE contexts to pathologize same-sex relationships.
+- Note: Flagged for Phase 1 documentation.
+
+---
+
+## SECTION 3 — Pseudo-Science (C3)
+
+**ROGD** (Rapid Onset Gender Dysphoria)
+- Cluster: Pseudo-Science / Anti-Trans/ROGD | Function: Pseudo-Diagnostic
+- Definition: Debunked pseudo-diagnosis (Littman, 2018) claiming gender dysphoria in adolescents is caused by social contagion. Paper surveyed parents from anti-trans websites; journal issued correction. Despite this, ROGD remains central to anti-trans SOGICE rhetoric.
+- Promotional use rule: Tag when invoked to pathologize trans identity or justify restricting care.
+- Related: → Social-Contagion-Myth, → Detrans Pandemic, → Watch and Wait Policy
+- Links to actors: SEGM, Genspect, 4thWaveNow
+
+**Autogynephilia (AGP)**
+- Cluster: Pseudo-Science / Anti-Trans/ROGD | Function: Pseudo-Diagnostic
+- Definition: Term coined by Ray Blanchard (1989) claiming paraphilic sexual motivation for transition in some trans women. Part of the Blanchard two-type typology (HSTS vs. AGP). Rejected by mainstream trans medicine. Widely used by gender-critical actors.
+- Related: → HSTS, → Blanchard Typology
+
+**HSTS** (Homosexual Transsexual)
+- Cluster: Pseudo-Science / Anti-Trans/ROGD | Function: Pseudo-Diagnostic
+- Definition: Blanchard's label for trans women attracted to men. Reduces trans identity to sexual orientation relative to natal sex.
+- Related: → Autogynephilia, → Blanchard Typology
+
+**Father Wound / Father Deficit Model**
+- Cluster: Pseudo-Science | Function: Pseudo-Diagnostic
+- Definition: Pseudo-psychoanalytic origin theory (Nicolosi/NARTH) claiming absent fathers cause homosexuality in boys. No empirical support. Creates guilt and family conflict.
+- Related: → Mother Wound, → Attachment Disorder Theory, → Reparative Drive
+
+**Mother Wound**
+- Cluster: Pseudo-Science | Function: Pseudo-Diagnostic
+- Definition: Variant claiming overattachment to mothers causes homosexuality. Positions mother as complicit. No empirical support.
+- Related: → Father Wound, → Attachment Disorder Theory
+
+**Reparative Drive**
+- Cluster: Pseudo-Science | Function: Pseudo-Diagnostic
+- Definition: Nicolosi's core concept: an alleged unconscious drive in gay men to repair damaged father-son relationship via masculine affirmation from other men, which becomes eroticized. The engine of the entire reparative therapy system.
+- Related: → Father Wound, → Reparative Therapy
+
+**Reparative Therapy**
+- Cluster: Pseudo-Science | Function: Pseudo-Diagnostic
+- Definition: Psychotherapeutic intervention aimed at changing orientation. Popularized by Nicolosi/NARTH. Regarded as unethical by all mainstream bodies. Dual-use: promoted by SOGICE advocates, critiqued by opponents — apply stance_profile carefully.
+- Related: → SOCE, → Conversion Therapy
+
+**Social Contagion Myth**
+- Cluster: Pseudo-Science / Anti-Trans/ROGD | Function: Pseudo-Diagnostic
+- Definition: False claim that LGBTQ+ identities spread peer-to-peer like fashion or infection. Applied to homosexuality in older materials; to trans identity in contemporary materials through ROGD.
+- Related: → ROGD, → Detrans Pandemic, → Trans Trend
+
+**GID** (Gender Identity Disorder)
+- Cluster: Pseudo-Science | Function: Pseudo-Diagnostic
+- Definition: Former DSM category, replaced by Gender Dysphoria in DSM-5 (2013). Continued use is a False-Scientific-Authority marker.
+- Related: → ROGD, → Autogynephilia
+
+**Neuroplasticity Argument (weaponized)**
+- Cluster: Pseudo-Science | Function: Pseudo-Diagnostic
+- Definition: Misuse of neuroplasticity research to claim orientation can be altered. Cherry-picks studies, ignores distinctions. Used by IFTCC and NARTH for contemporary scientific veneer.
+
+**Desisting**
+- Cluster: Pseudo-Science / Anti-Trans/ROGD | Function: Pseudo-Diagnostic
+- Definition: Pseudo-clinical claim that most trans-identified youth will stop identifying as trans if not affirmed. Studies cited use outdated criteria. Central to "watchful waiting" and "trans the gay away."
+- Related: → ROGD, → Watch and Wait Policy, → Trans the Gay Away
+
+**Failed Boy Syndrome**
+- Cluster: Pseudo-Science | Function: Pseudo-Diagnostic
+- Definition: Claimed developmental cause of homosexuality: failure to achieve masculine identification in childhood. Nicolosi/NARTH.
+- Related: → Father Wound, → Reparative Drive
+
+**No One Is Born Gay**
+- Cluster: Pseudo-Science | Function: Disinformation Narrative
+- Definition: Anti-scientific slogan denying innate sexual orientation. Used to argue identity is a choice subject to change.
+
+**Homosexual Disorder**
+- Cluster: Pseudo-Science | Function: Pseudo-Diagnostic
+- Definition: Outdated DSM framing (removed 1973) still used by some SOGICE actors to pathologize gay identity.
+
+---
+
+## SECTION 4 — Policy-Resistance (C4)
+
+**Therapeutic Choice**
+- Cluster: Policy-Resistance | Function: Political Slogan
+- Definition: Core anti-ban slogan of IFTCC and allies. Reframes conversion therapy as a free therapeutic option. Deliberately echoes pro-choice language.
+- Related: → Congruence Therapy, → SAFE-T, → Change-Allowing Therapy
+- Links to actors: IFTCC
+- Links to legal: Directly countered by → LD-ES-2023 (Spain, banned even with consent)
+
+**SAFE-T** (Sexual Attraction Fluidity Exploration in Therapy)
+- Cluster: Policy-Resistance | Function: Euphemism
+- Definition: IFTCC/ATCSI rebranding presenting SOGICE as neutral exploration of orientation fluidity. Used in legislative contexts where other labels are legally vulnerable.
+- Related: → Therapeutic Choice, → Congruence Therapy
+
+**Congruence Therapy**
+- Cluster: Policy-Resistance | Function: Euphemism
+- Definition: Rebranding of SOGICE as aligning behavior/identity with values. "Values congruence" sidesteps ban definitions. Widely used by IFTCC in submissions.
+- Related: → Therapeutic Choice, → SAFE-T, → Identity Exploration Therapy
+
+**Parental Rights Frame**
+- Cluster: Policy-Resistance | Function: Political Slogan
+- Definition: Positions parents as having the right to seek SOGICE for minors. See also → Parental-Rights-Trans for the trans-specific variant.
+- Related: → Therapeutic Choice, → Parental-Rights-Trans
+
+**Criminalising Prayer**
+- Cluster: Policy-Resistance | Function: Political Slogan
+- Definition: UK framing by SOGICE advocates arguing bans criminalize private prayer. Conflates structured SOGICE with spontaneous prayer. **Eastern Orthodox expansion (2026):** NIKI (Greece) frames EU proposals as "criminalizing Orthodox spiritual life." Likely present in Serbian, Romanian, Russian Orthodox materials.
+- Related: → Pastoral Support, → Religious Freedom Argument
+- Links to actors: Core Issues Trust, Christian Institute, NIKI (Greece)
+
+**Watch and Wait Policy**
+- Cluster: Policy-Resistance / Anti-Trans/ROGD | Function: Political Slogan
+- Definition: Promotes non-affirming delay as default for trans youth. Presents SOGICE-equivalent restrictions as cautious care.
+- Related: → Desisting, → ROGD, → Affirmation-Only Approach
+- Links to actors: SEGM, Genspect, 4thWaveNow
+
+**Operation Gideon**
+- Cluster: Policy-Resistance / Anti-Gender | Function: Political Slogan / Network Frame
+- Definition: Coordinated pan-European IFTCC campaign (June 2025) to challenge conversion therapy bans. Biblical Gideon invocation implies divine mandate and strategic necessity. Functions as both rhetorical frame and network coordination device.
+- Source: https://iftcc.org/operation-gideon
+- Related: → IFTCC, → Therapeutic Choice, → PastoralCoercion-LegislativeLoophole
+
+**Oxygen-Gideon**
+- Cluster: Policy-Resistance (candidate) | Function: Candidate — corpus validation required
+- Definition: **CANDIDATE TERM.** Appears in IFTCC-affiliated communications. Not found on iftcc.org/operation-gideon. Precise meaning, usage, and function not yet established.
+- Open question: Q10 in Ontology v3.0
+
+---
+
+## SECTION 5 — Anti-Trans/ROGD (C5)
+
+**Detrans Pandemic**
+- Cluster: Anti-Trans/ROGD | Function: Disinformation Narrative
+- Definition: Exaggeration of detransition rates to argue gender-affirming care causes widespread harm. "Pandemic" framing is unsupported by research.
+- Related: → ROGD, → Transgender Regret, → Detransition Awareness Day
+
+**Peak Trans**
+- Cluster: Anti-Trans/ROGD | Function: Conspiracy
+- Definition: Term for the moment of radicalization against trans inclusion. Sharing "peak trans moments" is bonding ritual in gender-critical spaces.
+- Related: → TERF, → Gender-Critical
+
+**WPATH Files**
+- Cluster: Anti-Trans/ROGD | Function: Disinformation Narrative
+- Definition: Organized campaign against WPATH Standards of Care via selective publication and misrepresentation of internal communications.
+- Related: → Affirmation-Only Approach, → Dysphoria Industry
+- Links to actors: SEGM
+
+**Trans the Gay Away**
+- Cluster: Anti-Trans/ROGD / Pro-Trans-SOGICE | Function: Disinformation Narrative
+- Definition: Gender-critical claim that trans-affirming care converts gay/lesbian youth into trans people. Defining term of Pro-Trans-SOGICE asymmetric logic.
+- Related: → Desisting, → Butch Flight
+
+**Butch Flight**
+- Cluster: Anti-Trans/ROGD | Function: Disinformation Narrative
+- Definition: Theory that butch lesbians transition to escape misogyny rather than from genuine trans identity. Delegitimizes trans men.
+- Related: → Trans the Gay Away, → Desisting
+
+**TERF** (Trans-Exclusionary Radical Feminist)
+- Cluster: Anti-Trans/ROGD | Function: Identity-Policing (analytical label)
+- Definition: Descriptive label for feminists excluding trans women. Relevant as actor type: many SOGICE-adjacent organizations are TERF-aligned.
+- Related: → TEHM, → LGB Alliance, → Gender-Critical
+
+**TEHM** (Trans-Exclusionist Homosexual Male)
+- Cluster: Anti-Trans/ROGD | Function: Identity-Policing
+- Definition: Male equivalent to TERF label.
+- Related: → TERF
+
+**Transvestigating**
+- Cluster: Anti-Trans/ROGD | Function: Conspiracy
+- Definition: Conspiracy-based harassment "investigating" people to "prove" they are secretly transgender.
+
+**Detransition Awareness Day**
+- Cluster: Anti-Trans/ROGD | Function: Political Slogan
+- Definition: Annual organized anti-trans event (March 12) using detransitioner narratives to argue against care.
+
+**Ex-Trans**
+- Cluster: Anti-Trans/ROGD | Function: Recruitment Frame
+- Definition: Identity label for detransitioned people promoted by anti-trans organizations. Parallel to ex-gay.
+- Related: → Ex-Gay
+
+**Dysphoria Industry**
+- Cluster: Anti-Trans/ROGD | Function: Conspiracy
+- Definition: Conspiracy frame positioning gender medicine as profit-driven industry manufacturing trans identities.
+
+**Puberty Blocker Panic**
+- Cluster: Anti-Trans/ROGD | Function: Disinformation Narrative
+- Definition: Coordinated moral panic framing reversible medical interventions as dangerous and irreversible.
+
+**Transgender Regret**
+- Cluster: Anti-Trans/ROGD | Function: Disinformation Narrative
+- Definition: Systematic overrepresentation of regret narratives. Research consistently shows very low regret rates.
+
+**Biology Is Destiny**
+- Cluster: Anti-Trans/ROGD | Function: Political Slogan
+- Definition: Gender-essentialist slogan rejecting gender self-determination.
+
+**Cotton Ceiling**
+- Cluster: Anti-Trans/ROGD | Function: Slur
+- Definition: Originally coined within trans discourse; since weaponized by anti-trans actors to claim trans women coerce lesbians.
+
+**Trans Trend**
+- Cluster: Anti-Trans/ROGD | Function: Disinformation Narrative
+- Definition: Dismissal of trans identity as social fashion, particularly among youth.
+- Related: → Social Contagion Myth, → ROGD
+
+**Trans Widow**
+- Cluster: Anti-Trans/ROGD | Function: Identity-Policing
+- Definition: Term used by partners (usually cis women) who feel "bereaved" by a partner's transition. Used in gender-critical communities to generate sympathy for opposition to trans rights.
+
+---
+
+## SECTION 6 — Anti-Gender (C6)
+
+**Gender Ideology**
+- Cluster: Anti-Gender | Function: Conspiracy
+- Definition: Master frame of the Anti-Gender cluster. Positions LGBTQ+ rights as coordinated ideological project. Originated in Vatican theological documents (1990s). Each language has its variant (see Section 11).
+- Related: → kjønnsideologi, → ideologia gender, → SOGI Propaganda, → Strategic Ideological Capture
+
+**SOGI Propaganda**
+- Cluster: Anti-Gender | Function: Conspiracy
+- Definition: Conspiratorial frame against SOGIE-inclusive education. Positions it as indoctrination.
+- Related: → Gender Ideology, → Groomer-Panic
+
+**Strategic Ideological Capture**
+- Cluster: Anti-Gender | Function: Conspiracy
+- Definition: Conspiracy claim that trans-rights NGOs have captured EU institutions and courts.
+- Related: → Gender Ideology, → IFTCC
+
+**Groomer / Groomer Panic**
+- Cluster: Anti-Gender | Function: Slur / Conspiracy
+- Definition: "Groomer" as standalone slur positioning LGBTQ+ people as child predators. The moral panic particularly targets educators and inclusive education.
+- Related: → Anti-LGBT Conspiracy, → Clovergender, → MAP
+
+**LGBTism**
+- Cluster: Anti-Gender | Function: Political Slogan / Conspiracy
+- Definition: Frames LGBTQ+ identities as a political ideology rather than innate characteristics. Used to delegitimize legal protections.
+
+**Gender Critical**
+- Cluster: Anti-Gender / Anti-Trans/ROGD | Function: Identity-Policing
+- Definition: Self-applied label by anti-trans activists framing opposition to trans rights as feminist analysis. Relationship to mainstream feminist discourse needs careful documentation.
+- Related: → TERF, → LGB Alliance, → Sex Matters
+
+**Woke** (anti-LGBTQ+ usage)
+- Cluster: Anti-Gender | Function: Political Slogan
+- Definition: Originally AAVE for social awareness; now deployed as pejorative against LGBTQ+ rights and inclusive policies. Used to frame affirmation as ideological capture.
+- Note: Only tag when used in anti-LGBTQ+ context, not general political usage.
+
+---
+
+## SECTION 7 — Pro-Trans-SOGICE (C7)
+
+**Pharmacological Conversion Therapy**
+- Cluster: Pro-Trans-SOGICE / Anti-Trans/ROGD | Function: Political Slogan
+- Definition: Rhetorical inversion recasting puberty blockers and hormones as "pharmacological conversion therapy" converting gay/lesbian children into trans people. Most explicit Pro-Trans-SOGICE manifestation.
+- Related: → Trans the Gay Away, → Watch and Wait Policy
+
+**Affirmation-Only Approach**
+- Cluster: Pro-Trans-SOGICE / Policy-Resistance | Function: Political Slogan
+- Definition: Frames gender-affirming care as rigid doctrine forbidding exploratory therapy. Positions non-affirmation as neutral science.
+- Related: → Watch and Wait Policy, → ROGD, → Congruence Therapy
+
+---
+
+## SECTION 8 — SLURS AND HARMFUL TERMINOLOGY
+
+**All entries: visibility = research_contextualized.**
+
+Mandatory framing: "This term appears in the SurvivingSOGICE corpus as a slur or harmful term used against LGBTQ+ people. It is documented here for research completeness. Documentation does not constitute endorsement."
+
+**Faggot / Fag** — Anti-Gender (Dehumanizing-Language) | Slur. Most severe anti-gay slur in English. Appears in far-right and extremist SOGICE-adjacent content and survivor testimonies.
+
+**Tranny** — Anti-Trans/ROGD | Slur. Offensive term for transgender people. Appears in anti-trans social media and survivor testimony.
+
+**Sodomite** — Pastoral-Coercion / Anti-Gender | Slur / Pastoral Rhetoric. Archaic religious-legal term. Still used in pastoral SOGICE materials.
+
+**Troon** — Anti-Trans/ROGD | Slur. 4chan-origin derogatory term for trans people.
+
+**Hon** — Anti-Trans/ROGD | Slur. Derogatory term for non-passing trans women. 4chan /lgbt/ origin.
+
+**Pooner** — Anti-Trans/ROGD | Slur. 4chan-origin derogatory term for trans men.
+
+**Poof / Poofter** — Anti-Gender | Slur. British/Australian anti-gay slur.
+
+**Bent** — Anti-Gender | Slur. Implies orientation as moral deviation from "straight."
+
+**Batty Boy** — Anti-Gender | Slur. Jamaican slang for gay/effeminate man. Appears in migration-context SOGICE materials.
+
+**Globohomo** — Anti-Gender | Slur / Conspiracy. Far-right portmanteau. Carries antisemitic layer through "globalist."
+
+**Degeneracy** — Anti-Gender | Slur. Extremist framing of LGBTQ+ identity as civilizational decline.
+
+**Alphabet People / Alphabet Mafia** — Anti-Gender | Dehumanizing. Mockery of LGBTQ+ acronym. "Mafia" adds threatening framing.
+
+**Maricón / Joto / Fleto / Hueco / Loca** — Anti-Gender | Slur. Regional Spanish-language slurs for gay men. Essential for tagging Spanish-language corpus from Hazte Oír/CitizenGO.
+
+**Camiona / Marimacho** — Anti-Gender | Slur. Spanish slurs for masculine women/butch lesbians.
+
+**Shemale** — Anti-Trans/ROGD | Slur. Derogatory and fetishistic term for trans women.
+
+**Norgay** — Anti-Gender | Regional Pejorative. Internet portmanteau of "Norway" and "Gay." Relevant to Norwegian corpus.
+
+**Special Snowflake** — Anti-Gender | Slur. Pejorative mocking non-binary and diverse gender identities.
+
+**Fatherless** — Anti-Gender / Pseudo-Science | Slur / Pseudo-Diagnostic link. Internet insult implying LGBTQ+ identity stems from absent father. Connects to → Father Wound pseudo-psychology.
+
+**Super Straight** — Anti-Trans/ROGD | Troll / Political Slogan. Troll movement claiming attraction only to cisgender people. Manufactured as anti-trans mobilization.
+
+**Transmaxxing** — Anti-Trans/ROGD | Troll / Conspiracy. Incel-originated theory of transitioning for social advantage.
+
+**Clovergender** — Anti-Gender | Troll / Conspiracy. Fake "gender" linking LGBTQ+ community to pedophilia. Created by anti-LGBTQ+ trolls.
+- Origin note: "This term was created by anti-LGBTQ+ actors to falsely associate LGBTQ+ identities with pedophilia."
+
+**MAP / Pedosexual** — Anti-Gender | Conspiracy / Troll. Attempt to frame attraction to minors as orientation equivalent to homosexuality. Anti-LGBTQ+ propaganda tool.
+- Origin note: "This term appears in the corpus in the context of anti-LGBTQ+ conspiracy claims."
+
+---
+
+## SECTION 9 — NON-SOGICE REFERENCE TERMS
+
+Terms needed for Lexicon background and researcher reference. NOT used as tagger tags.
+
+**SOGIESC** — Expanded policy acronym (Sexual Orientation, Gender Identity, Gender Expression, Sex Characteristics). Used by UN, Council of Europe, progressive legislative language.
+
+**Conversion Practices** (contested term) — Analytical umbrella wider than "conversion therapy." Pro-SOGICE actors (including Athena Forum) explicitly contest the term — this contestation is itself a Policy-Resistance tactic.
+
+**AFAB / AMAB** — Clinical terms. SOGICE actors sometimes misuse to reinforce Sex-Rejection-Frame.
+
+**Passing** — SOGICE and gender-critical actors weaponize "passing" to claim trans people are "pretending."
+
+**Desistance** (analytical) — Academic study of people who stop identifying as transgender. Distinct from "desisting" as SOGICE term (Section 3). Apply stance_profile carefully.
+
+**Pink Capitalism / Rainbow Washing** — Critical queer theory terms. Not SOGICE terms.
+
+**AffirmativeOrExploratorySupport** (boundary concept)
+- Cluster: Non-SOGICE | Function: Reference / Boundary Concept
+- Definition: Family of approaches supporting a person in exploring/affirming their SOGIE without predetermined outcome. Excluded from conversion practice definitions in Malta, Belgium, Canada, Germany, Wales. **Critical boundary:** the same language ("identity exploration") is used by both legitimate practitioners and pro-SOGICE actors claiming exemption from bans. The difference is whether the practice presupposes LGBTQ+ identity is undesirable.
+- Tagging rule: stance_profile: legal_administrative (in law) | critical_advocacy (in anti-SOGICE doc) | promotional + Policy-Resistance (in pro-SOGICE doc claiming exemption)
+- Related: → Congruence Therapy, → SAFE-T, → Identity Exploration Therapy
+
+---
+
+## SECTION 10 — SHORTHAND AND ACRONYMS
+
+| Acronym | Full form | Context |
+|---|---|---|
+| SOCE | Sexual Orientation Change Efforts | APA/clinical |
+| SOGICE | Sexual Orientation and Gender Identity Change Efforts | Academic |
+| SOGIESC | Sexual Orientation, Gender Identity, Gender Expression, Sex Characteristics | UN/rights |
+| SSA | Same-Sex Attraction | SOGICE euphemism |
+| SGA | Same-Gender Attraction | LDS variant |
+| USSA | Unwanted Same-Sex Attraction | SOGICE suppression |
+| IFTCC | International Federation for Therapeutic and Counselling Choice | Pro-SOGICE body |
+| NARTH | National Association for Research and Therapy of Homosexuality | Pro-SOGICE (rebranded) |
+| SEGM | Society for Evidence-Based Gender Medicine | Anti-trans pseudo-academic |
+| ROGD | Rapid Onset Gender Dysphoria | Debunked pseudo-diagnosis |
+| AGP | Autogynephilia | Blanchard pseudo-diagnostic |
+| HSTS | Homosexual Transsexual | Blanchard typology |
+| GID | Gender Identity Disorder | Obsolete DSM category |
+| TERF | Trans-Exclusionary Radical Feminist | Actor type |
+| TEHM | Trans-Exclusionist Homosexual Male | Male TERF equivalent |
+| SAFE-T | Sexual Attraction Fluidity Exploration in Therapy | IFTCC rebrand |
+| WPATH | World Professional Association for Transgender Health | Healthcare standards |
+| MAP | Minor Attracted Person | Troll/paraphilic misuse |
+| APA | American Psychological Association | Anti-SOGICE body |
+| GPAHE | Global Project Against Hate and Extremism | Monitoring org |
+| ILGA | International Lesbian, Gay, Bisexual, Trans and Intersex Association | Advocacy |
+| NIKI/NIKH | Greek conservative/nationalist party | Eastern Orthodox anti-ban actor |
+
+---
+
+## SECTION 11 — MULTILINGUAL QUICK REFERENCE
+
+| English | Norwegian | Italian | French | German | Spanish | Polish | Finnish | Swedish | Hungarian | Greek | Maltese |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Gender Ideology | kjønnsideologi | ideologia gender | idéologie du genre | Gender-Ideologie | ideología de género | ideologia genderowa | sukupuoli-ideologia | genusideologi | genderideológia | — | — |
+| Reparative Therapy | reparativ terapi | terapie riparative | thérapies réparatrices | Reparativtherapie | terapia reparativa | terapia reparatywna | reparatiivinen terapia | reparativ terapi | reparatív terápia | — | — |
+| Conversion Therapy | konverteringsterapi | terapie di conversione | thérapies de conversion | Konversionstherapie | terapia de conversión | terapia konwersyjna | konversioterapia | konverteringsterapi | konverziós terápia | θεραπείες μεταστροφής (T2) | — |
+| Conversion Practices | konverteringspraksis | pratiche di conversione | pratiques de conversion | Konversionspraktiken | prácticas de conversión | praktyki konwersyjne | konversiokäytännöt | konverteringspraktiker | konverziós gyakorlatok | Πρακτικές μεταστροφής (T1) | prattiċi ta' konverżjoni (T1) |
+| Pastoral Support | pastoral støtte | supporto pastorale | soutien pastoral | seelsorgerische Unterstützung | apoyo pastoral | wsparcie duszpasterskie | pastoraalinen tuki | pastoralt stöd | lelkipásztori támogatás | — | — |
+| Watchful Waiting | avventende observasjon | osservazione attenta | observation vigilante | beobachtendes Abwarten | observación vigilante | czujne oczekiwanie | tarkkaileva odotus | avvaktande observation | figyelmes várakozás | — | — |
+| Self-determination | selvbestemmelse | autodeterminazione | autodétermination | Selbstbestimmung | autodeterminación | samostanowienie | itsemääräämisoikeus | självbestämmande | önrendelkezés | — | — |
+
+**(T1) = Tier-1 (legal), (T2) = Tier-2 (NGO/academic). Unmarked = Tier-2. Hungarian terms = Tier-3 (needs confirmation).**
+
+**Language-specific terms:**
+
+**Norwegian:** kjønnsideologi (T2, policy debates) · reparativ terapi (T2, dual-use) · konverteringsterapi (T1, §270 Criminal Code, in force 1 Jan 2024)
+
+**Italian:** Cristoterapia — "Christ therapy," Italian Catholic SOGICE rebranding (C2)
+
+**Portuguese:** Terapia do Amor — "Love Therapy," Igreja Universal (C2)
+
+**Spanish legal:** Ley 4/2023 Art. 17 uses `métodos, programas y terapias de aversión, conversión o contracondicionamiento` (T1). Modality terms aversión and contracondicionamiento are detection markers for historical Spanish SOGICE.
+
+**Greek:** Πρακτικές μεταστροφής (T1, N.4931/2022 Art. 62) · θεραπείες μεταστροφής (T2, common usage)
+
+**Maltese:** prattiċi ta' konverżjoni (T1, Malta Act LV 2016)
+
+**French:** pratiques visant à modifier ou réprimer (T1, France Loi 2022-92) · pratique de conversion (T1, Belgium 2023) · morinom (deadname, Anti-Trans harm documentation)
+
+**Russian:** goluboy / rozovy (coded color terms, migration/asylum cluster)
+
+**Finnish:** sukupuolenkorjaus (gender-affirming surgery, "correction/repair" — linguistically closer to "reparative")
+
+---
+
+## SECTION 12 — TERMS REQUIRING FURTHER DOCUMENTATION
+
+Carried forward from PRD v2.0 §6.4–6.5:
+
+- All `#hashtag` terms — social media corpus still being assembled
+- All language-specific terms — first documented use dates needed
+- Gender Critical — relationship to mainstream feminist discourse
+- CHANGED Movement course vocabulary — terms to identify and add
+- Bethel Sozo promotional framework — terms to identify and add
+- Co-dependency (SOGICE application) — full documentation needed
+
+---
+
+*SOGICE Lexicon v2.0 · April 2026 · SurvivingSOGICE PhD Research Archive · University of Bergen*
+*Living document — grows with every ingestion batch*
+*Companion: SOGICE_Ontology_v3.0.md · PRD_v3.0.md*
