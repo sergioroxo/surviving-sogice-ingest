@@ -404,6 +404,10 @@ Document text
 
 After each 20–50 doc batch: new terms → lexicon updated; new entities → registry updated; systematic patterns → ontology version increment. All changes logged.
 
+### 6.4 ChatGPT Validation Prompt Design
+
+Provisional prompt for validation, to be developed: `ChatGPT Validation Prompt.md`.
+
 ---
 
 ## 7. Human Review Layer
