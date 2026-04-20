@@ -1,0 +1,1177 @@
+# SurvivingSOGICE — Product Requirements Document v3.1
+
+**Project:** SurvivingSOGICE
+**Institution:** University of Bergen — INFOMEDIA / Center for Digital Narrative
+**Researcher:** Sérgio Galvão Roxo
+**Public URL:** survivingsogice.eu
+**Document status:** Living document — updated per session
+**Last updated:** April 2026
+**Version:** 3.1 (supersedes PRD v3.0)
+**June 2026 milestone:** CDN Pride Bergen work-in-progress showing
+**October 2026 milestone:** Full exhibition
+
+---
+
+## Changelog from v3.0
+
+- **System repositioned** as a creative-research extraction engine (§1) — retains archive, lexicon, and experience layers but clarifies the tool's realistic role
+- **Trust Tier system added** (§3) — Tier 1 / 2 / 3 with automatic default assignment and manual override
+- **Adaptive validation replaces universal dual-LLM** (§6) — ChatGPT validation is now a targeted tool triggered by confidence, tier, or manual request, not run on every document
+- **Two validation tracks** (§6, §13) — document validation (classification) and lexicon validation (term evidence review) operate separately
+- **Lexicon lifecycle redesigned** (§13) — draft terms are immediately taggable; lexicon validation is a periodic health check, not a gate before tagging
+- **Term Evidence Model added** (§13) — every term tracks an evidence dossier across documents
+- **Model-agnostic prompt export** (§9) — system prompt + payload can be exported as JSON or Markdown for use with any LLM (Gemini, GPT-4, Gemma, local models)
+- **Confidence schema added** (§5) — document-level and field-level confidence scores
+- **Processing snapshots removed** — the `ai_metadata.human_review.changes_made` boolean is sufficient audit trail
+- **Pilot-calibrated thresholds** — validation bands and audit rates are placeholders to be calibrated during pilot batch, not fixed numbers
+
+---
+
+## Table of Contents
+
+1. [Core Platform Concept](#1-core-platform-concept)
+2. [System Purpose — What This Tool Is and Is Not](#2-system-purpose--what-this-tool-is-and-is-not)
+3. [Trust Tier System](#3-trust-tier-system)
+4. [System Architecture](#4-system-architecture)
+5. [LLM Ingestion and Confidence Model](#5-llm-ingestion-and-confidence-model)
+6. [Adaptive Validation System](#6-adaptive-validation-system)
+7. [Pipeline — Five Phases](#7-pipeline--five-phases)
+8. [Preprocessing Layer](#8-preprocessing-layer)
+9. [Model-Agnostic Prompt Export](#9-model-agnostic-prompt-export)
+10. [Human Review Layer](#10-human-review-layer)
+11. [Token Economy and Payload Design](#11-token-economy-and-payload-design)
+12. [Entity Model — Six Entity Types](#12-entity-model--six-entity-types)
+13. [Lexicon Lifecycle and Validation](#13-lexicon-lifecycle-and-validation)
+14. [JSON Schema — Document Record](#14-json-schema--document-record)
+15. [Testimony as a Separate Content Type](#15-testimony-as-a-separate-content-type)
+16. [Landmark Events and Scope Logic](#16-landmark-events-and-scope-logic)
+17. [URL Harvesting and Web Archiving](#17-url-harvesting-and-web-archiving)
+18. [Experience Modules](#18-experience-modules)
+19. [WebXR and i-Doc Architecture](#19-webxr-and-i-doc-architecture)
+20. [Storage, Backup, and Preservation](#20-storage-backup-and-preservation)
+21. [Users and Permissions](#21-users-and-permissions)
+22. [Non-Functional Requirements](#22-non-functional-requirements)
+23. [Intern Checklist](#23-intern-checklist)
+24. [Phase Structure and Milestones](#24-phase-structure-and-milestones)
+25. [Methodological Position](#25-methodological-position)
+26. [Open Questions](#26-open-questions)
+
+---
+
+## 1. Core Platform Concept
+
+SurvivingSOGICE operates on three simultaneous registers that coexist throughout the platform:
+
+**Archive layer** — a tagged, structured corpus of pro-SOGICE and anti-SOGICE documents, with provenance, network mapping, and metadata. The analytical backbone.
+
+**Lexicon layer** — a living encyclopedia of SOGICE terminology, euphemisms, slurs, pseudo-diagnostics, and coded language across all relevant world languages. Structured as interconnected entries: each term links to related terms, source documents, actors who use it, and legal instruments that define or contest it. The lexicon functions as a **SOGICE Wikipedia** — a publicly browsable, internally linked reference where every term page shows every document it appears in. Full content in `SOGICE_Lexicon_v2.0.md`.
+
+**Experience layer** — interconnected interactive digital storytelling modules, navigable as a unified environment styled as a retro computer/OS shell.
+
+The primary navigation metaphor is an old computer interface — the user moves through it as if exploring a machine that holds suppressed information.
+
+**Non-negotiable design principle across all experience modules:** darkness is earned through compliance, not announced. The platform should feel like a polished commercial product at the start. Horror accumulates through mechanism.
+
+---
+
+## 2. System Purpose — What This Tool Is and Is Not
+
+### 2.1 What This Tool Is
+
+SurvivingSOGICE is a **creative-research extraction engine** that transforms messy, hidden, harmful SOGICE discourse into navigable structures for research, education, and creative production.
+
+**Primary function:** Extract meaning, structure, and patterns from SOGICE documents and turn them into summaries, network relationships, lexicon entries, testimonies, and creative fragments.
+
+**Secondary function:** Build a shared knowledge space usable by the researcher, future collaborators, and other queer creators.
+
+**Tertiary function:** Feed WebXR, interactive documentary, and artistic modules with archive-derived material.
+
+### 2.2 What This Tool Is Not
+
+- Not a fully validated academic database — resource constraints make that unattainable and that's not what it needs to be
+- Not a classification benchmark system — the contribution is not classification accuracy
+- Not a complete or exhaustive archive — it is selective and curated
+- Not a replacement for peer-reviewed scholarship — it is an input dataset and creative platform
+
+### 2.3 Academic Contribution
+
+The PhD contribution is not "I built the most accurate SOGICE classifier." It is: **"I designed a system that transforms harmful, hidden discourse into navigable, creative, and educational structures, under realistic resource constraints, with adaptive validation that manages uncertainty rather than pretending to eliminate it."**
+
+This is a methodological contribution to digital humanities, critical game studies, and computational media — not a claim about SOGICE classification accuracy.
+
+---
+
+## 3. Trust Tier System
+
+Not all documents need the same rigor. The Trust Tier system formalizes this: documents are assigned a tier at ingestion that determines how much validation they receive and where their outputs can appear.
+
+### 3.1 The Three Tiers
+
+**🟡 Tier 1 — Exploratory**
+- Claude ingestion only, minimal review
+- Used for: pattern discovery, internal exploration, early lexicon detection
+- Destination: researcher's working corpus, not published
+- Validation: skipped unless manually triggered
+
+**🟠 Tier 2 — Reviewed**
+- Claude ingestion + human review + selective validation (triggered by confidence thresholds)
+- Used for: research writing, lexicon development, network building
+- Destination: internal archive, `verified` workflow state
+- Validation: triggered by low confidence, legal flags, testimony flags, or manual request
+
+**🔵 Tier 3 — Published**
+- Full pipeline: Claude + human review + lexicon/ontology validation + human resolution
+- Used for: public archive, SOGICE Wikipedia, WebXR, i-Doc, educational outputs
+- Destination: `published` workflow state, visible on survivingsogice.eu
+- Validation: mandatory; all discovered terms must reach `validated` lexicon status before publication
+
+### 3.2 Automatic Tier Assignment (Default)
+
+Documents receive a default tier based on type and format at ingestion. The researcher can override at any point.
+
+| Document type | Default tier | Rationale |
+|---|---|---|
+| Social media post (single tweet, TikTok, IG) | Tier 1 | High volume, low individual weight; feeds lexicon discovery |
+| Blog post, news article | Tier 1 or 2 | Depends on source authority |
+| Testimony (survivor, ex-gay, detrans) | Tier 2 | Requires consent review before any publication |
+| Organization website / press release | Tier 2 | Standard research input |
+| NGO report, academic paper | Tier 2 | Reference material, may upgrade to 3 if widely cited |
+| Government report, court judgment | Tier 3 | Public record, high research value |
+| Legislative submission | Tier 3 | Primary source for policy analysis |
+| Landmark document (named in Landmark vocabulary) | Tier 3 | By definition publication-worthy |
+
+### 3.3 Manual Override
+
+The researcher can upgrade or downgrade any document's tier at any point. Tier changes are logged with a reason. Downgrading a `published` Tier 3 document to Tier 2 removes it from the public archive.
+
+### 3.4 Tier and Validation
+
+Tier does NOT equal workflow state. Tier is about destination and rigor; workflow state is about pipeline progress.
+
+A Tier 1 document can be `verified` (human has reviewed Claude's output) without ever being validated by a second LLM. A Tier 3 document must pass validation before reaching `published`.
+
+### 3.5 Tier as Feedback Loop
+
+Tier assignment is not final. Documents can move up or down based on what the research reveals:
+- A Tier 1 social media post becomes a key evidence source for a Landmark event → upgrade to Tier 2 or 3
+- A Tier 3 document fails lexicon validation repeatedly → downgrade pending further investigation
+
+---
+
+## 4. System Architecture
+
+### 4.1 Core Principle — Three Layers
+
+**Layer 1 — Preprocessing (local, deterministic).** Cleans and structures raw data. No interpretation.
+
+**Layer 2 — LLM Ingestion (application, probabilistic).** Generates structured metadata, tags, summaries, assets. Claude primary; ChatGPT selective validation; model-agnostic export supports other LLMs.
+
+**Layer 3 — Human Review (researcher-controlled, authoritative).** Validates, corrects, resolves. Final authority.
+
+### 4.2 Core Stack
+
+**Application Layer — Vercel**
+- Document submission interface
+- Claude ingestion and output review
+- Validation queue + batch builder
+- Human review interface (approve/reject/modify)
+- Lexicon browser/editor with evidence dossiers
+- Publication manager (tier management + workflow state)
+- **Automatic Wayback Machine integration** on URL submission
+- **Model-agnostic prompt export** (JSON + Markdown)
+- Export functions (JSON, CSV, Zotero)
+
+**Data Layer — Sanity.io (single source of truth)**
+- All record types: Documents, Testimonies, Entities (six types), Lexicon entries (with evidence dossiers), Extractable assets
+- Binary files: PDFs, HTML snapshots, video files, images as Sanity file assets
+- Real-time collaboration for 2–3 concurrent users
+
+**Workflow states:**
+- `unverified` — AI output, no human review
+- `in_progress` — human has opened the record
+- `verified` — tags confirmed/corrected
+- `published` — visible on public archive (Tier 3 only)
+
+**Additional validation states** (orthogonal to workflow):
+- `not_validated` — never submitted to second LLM
+- `queued` — in the validation batch queue
+- `validated` — second LLM validation complete, human resolved
+
+**Backup Layer — GitHub**
+- Project markdown documents
+- Folder structure and configuration
+- JSON exports of Sanity records (per batch or daily)
+- Application code
+
+GitHub does NOT store binary files. Those live in Sanity.
+
+**Preservation Layer — Internet Archive**
+- Every URL archived via Wayback Machine (automatic on submission)
+- Large video files uploaded to Internet Archive directly
+
+### 4.3 Public Archive and Lexicon
+
+**Platform:** Next.js on Vercel. Reads from Sanity via GROQ. Only `published` records visible.
+
+**Archive features:**
+- Browse by actor, network, country, tactic, term, cluster, document type, year
+- Individual document pages show: summary, tags, entity links, outbound URLs, Wayback link, AI process metadata, tier
+- **AI process metadata visible on every public record** — models used, agreement status, human review status, confidence, tier, ontology version
+
+**Lexicon features (SOGICE Wikipedia):**
+- Every term links to: related terms, source documents that use it, actors who use it, legal instruments
+- Each entry page shows definition, function, related terms, multilingual variants, full evidence dossier (every document excerpt where the term appears)
+- Internal linking between entries
+
+**Entity pages:** For each Organization, Person, Law — profile and all connected documents and terms.
+
+---
+
+## 5. LLM Ingestion and Confidence Model
+
+### 5.1 Claude — Primary Ingestion
+
+**API:** Anthropic API (claude-sonnet-4 or current)
+**Cost:** ~$0.10–0.40 per document
+**API key management:** Researcher holds key; interns access via Vercel interface.
+
+**System prompt architecture:** Two jobs — CLASSIFY (assign tags from vocabulary) and DISCOVER (identify candidate new terms). Absolute rules enforced.
+
+**Output per document:**
+- Research summary (prose paragraph, 80–150 words)
+- Classification tags (all vocabulary categories)
+- Narrative register
+- Scope, Landmark, Flag assignments
+- Document date with confidence
+- Extractable assets for creative practice
+- Candidate new terms (discovered)
+- Candidate new actors/networks
+- Priority score (5 axes)
+- **Confidence scores** (overall + field-level)
+
+### 5.2 Research Summary — Design
+
+Single prose paragraph of 80–150 words that accompanies the document on the public archive page. Not sectioned.
+
+**Addresses in prose:**
+1. What the document is and who produced it
+2. What rhetorical or political work it performs
+3. What makes it notable within the corpus
+4. Non-obvious connections to other actors, networks, or legal instruments
+
+**Token budget:** ~150–200 output tokens.
+
+### 5.3 Confidence Model
+
+Claude produces confidence scores at two levels:
+
+**Document-level:**
+```json
+{
+  "confidence": {
+    "overall_score": 0.0,
+    "status": "high | medium | low",
+    "reasons": ["string — e.g. 'ambiguous source', 'multi-language content'"],
+    "signals": {
+      "text_quality": "clean | noisy",
+      "language_clarity": "clear | mixed | unclear",
+      "content_structure": "well-structured | ambiguous"
+    }
+  }
+}
+```
+
+**Field-level:**
+```json
+{
+  "field_confidence": {
+    "type": 0.95,
+    "format": 0.98,
+    "tactic": 0.62,
+    "term": 0.58,
+    "actor": 0.87,
+    "scope": 0.91
+  },
+  "low_confidence_reasons": [
+    {
+      "field": "tactic",
+      "issue": "multiple plausible interpretations",
+      "severity": "medium"
+    }
+  ]
+}
+```
+
+Confidence scores drive adaptive validation (§6). They are also displayed to the human reviewer to prioritize attention.
+
+### 5.4 AI Metadata
+
+Every document record carries `ai_metadata` recording the full processing chain. Displayed on public archive for methodological transparency.
+
+```json
+{
+  "ai_metadata": {
+    "primary_model": "string",
+    "primary_provider": "anthropic | openai | google | local",
+    "validation_model": "string — null if not validated",
+    "validation_provider": "string — null if not validated",
+    "prompt_version": "string",
+    "ontology_version": "v3.0",
+    "processing_date": "ISO datetime",
+    "input_length_chars": "number",
+    "truncated": "boolean",
+    "tier": "1 | 2 | 3",
+    "agreement_status": "agreed | disagreed | not_validated",
+    "disagreements": ["string"],
+    "resolution": "accepted_primary | accepted_validation | human_override | not_applicable",
+    "human_review": {
+      "reviewed_by": "researcher | intern",
+      "reviewed_at": "ISO datetime",
+      "changes_made": "boolean"
+    },
+    "algorithmic_preprocessing": {
+      "tool": "unstructured | docling | yt-dlp | whisper | manual | none",
+      "preprocessing_quality": "high | medium | low"
+    }
+  }
+}
+```
+
+**Displayed on public archive:** models used, tier, agreement status, human review status, preprocessing quality, ontology version.
+
+**Note:** Processing snapshots (preserving Claude's original output before human edits) are NOT maintained. The `changes_made` boolean plus tag provenance is sufficient audit trail.
+
+---
+
+## 6. Adaptive Validation System
+
+### 6.1 Principle
+
+Validation is **selective, adaptive, and researcher-controlled**. It is not a ritual applied to every document; it is a tool triggered when trust needs to increase.
+
+> Validation manages risk — it does not guarantee truth.
+
+### 6.2 Two Validation Tracks
+
+**Track A — Document Validation (§6.3–6.7)**
+Re-classifies a specific document with a second LLM to check Claude's output. Used for documents where classification confidence matters: low confidence, Tier 3, testimony, legal flags.
+
+**Track B — Lexicon Validation (§13)**
+Periodic review of accumulated evidence for draft terms. Confirms definitions hold up across the corpus, detects merge candidates, validates cluster assignment. Runs on the lexicon, not on individual documents.
+
+### 6.3 Three-Band Validation Model (Document Track)
+
+Validation requirement is determined by document confidence:
+
+| Confidence range | Validation action |
+|---|---|
+| High | Optional — skipped unless manually triggered |
+| Medium | Recommended — added to batch queue |
+| Low | Mandatory — must be validated before `verified` |
+
+**Note:** The exact confidence thresholds (e.g., 0.85 / 0.70) are placeholders to be **calibrated during the pilot batch (§24)**. The pilot will process 10–20 representative documents, the researcher will compare Claude's confidence scores with actual classification quality, and the thresholds will be set based on that calibration. They are not fixed in this document.
+
+### 6.4 Validation Triggers
+
+Validation can be triggered by:
+
+- `mandatory_threshold` — confidence below the calibrated low threshold
+- `low_confidence` — at least one field-level score below a calibrated threshold
+- `legal_flag` — document is a legal instrument, court case, or legislative submission
+- `testimony_flag` — document contains testimony requiring consent review
+- `tier_requirement` — Tier 3 documents always validated before publication
+- `manual_researcher` — researcher inputs a document ID to trigger validation
+- `random_audit` — calibrated percentage of high-confidence documents validated to check system calibration
+
+### 6.5 Batch Composition (Configurable)
+
+Validation runs on batches, not individual documents, to reduce cost.
+
+**Batch composition (configurable per batch):**
+- All mandatory-trigger documents (low confidence, Tier 3 not yet validated)
+- Recommended documents (medium confidence) — configurable percentage
+- Random audit sample of high-confidence documents — configurable percentage
+
+**Batch size:** 20–50 documents by default. Configurable.
+
+**Batch configuration file:**
+```json
+{
+  "batch_id": "batch-07",
+  "composition": {
+    "mandatory": "all",
+    "recommended_percentage": 50,
+    "random_audit_percentage": 10
+  },
+  "trigger_documents": ["doc_id_1", "doc_id_2"]
+}
+```
+
+The researcher configures each batch. For the pilot, audit rates and recommended percentages are left as placeholders to be set based on observation.
+
+### 6.6 Validation LLM
+
+ChatGPT is the default validation LLM (independent model family from Claude, providing triangulation). The system must support **model-agnostic validation** (§9) — the researcher can use any LLM (Gemini, GPT-4, Gemma, local models) by exporting the validation prompt and pasting outputs back into the Vercel app.
+
+**What the validation LLM receives:**
+- Original document text
+- Controlled vocabulary (current version)
+- Claude's output (tags, summary, terms, assets)
+- Instruction to validate, identify disagreements, suggest additional tags Claude may have missed
+
+**What it produces:**
+- Tag validation (agrees/disagrees with each Claude tag)
+- Additional tag suggestions (lexicon grows between batches)
+- Additional asset extractions Claude may have missed
+- Disagreements with rationale
+- Confidence assessment of its own vs. Claude's judgment
+
+### 6.7 Validation Status
+
+Each document carries a validation object:
+
+```json
+{
+  "validation": {
+    "status": "not_validated | queued | validated",
+    "validation_trigger": "string",
+    "pre_validation_confidence": 0.0,
+    "post_validation_confidence": 0.0,
+    "validated_by": "model identifier",
+    "validated_at": "ISO datetime",
+    "resolution": "accepted_primary | accepted_validation | human_override"
+  }
+}
+```
+
+---
+
+## 7. Pipeline — Five Phases
+
+### Phase 0 — Discovery
+
+- Collect documents using research tools (Perplexity, OSINT toolkit)
+- **URL archiving automatic** on submission in Vercel app
+- Download social media via yt-dlp immediately
+- Assign default tier based on document type (§3.2)
+
+### Phase 1 — Preprocessing (local, deterministic)
+
+Unstructured.io or Docling (PDFs, HTML) · yt-dlp (subtitles) · Whisper / Autotekst (transcription). Output: clean text with metadata and `preprocessing_quality` rating.
+
+### Phase 2 — LLM Ingestion
+
+**Step 1 — Claude:**
+- Research summary, tags, assets, candidate terms, suggested entities, priority score
+- **Confidence scores** (overall + field-level)
+
+**Human Review #1:** Researcher or intern reviews Claude output, approves/rejects tags, **approves candidate terms as `draft` (immediately taggable)**, approves new entities.
+
+**Step 2 — Adaptive validation (conditional):**
+- If triggered by confidence, tier, flag, or manual request → document enters validation queue
+- Batch runs when queue reaches configured size
+- Validation LLM (ChatGPT default; any model via export) re-classifies
+- Disagreements flagged
+
+### Phase 2.5 — Status Assignment
+
+- `ready` — high confidence, both LLMs agree (if validated), human reviewed
+- `needs_review` — disagreements, medium confidence, testimony, or boundary case
+- `high_risk` — significant disagreements, sensitive content, Tier 3 not yet validated
+
+### Phase 3 — Human Validation
+
+Researcher resolves disagreements, approves testimony extraction, advances workflow to `verified`.
+
+### Phase 4 — Publication
+
+Only Tier 3 documents reach `published`. Final records in Sanity. JSON exported to GitHub.
+
+---
+
+## 8. Preprocessing Layer
+
+### 8.1 Tools
+
+- **Unstructured.io / Docling** — PDFs, HTML, reports, long documents (80+ pages chunked)
+- **yt-dlp** — video subtitle extraction
+- **Whisper / Autotekst** — transcription when no subtitles
+
+**Does NOT:** classify, tag, summarize, interpret.
+
+### 8.2 Preprocessing Quality
+
+Every document records a `preprocessing_quality` rating:
+
+| Condition | Action |
+|---|---|
+| Clean extraction, well-structured | `high` — proceed |
+| Minor OCR errors, some noise | `medium` — proceed, flag if classification confidence low |
+| Poor OCR, significant noise | `low` — allow but mark `needs_review` |
+| Unreadable content | `blocked` — do not proceed to LLM |
+| Parsing failure | `blocked` — researcher investigates |
+
+### 8.3 Video Processing
+
+yt-dlp subtitles → Whisper if missing → strip timestamps → chunk if long → Claude per chunk → synthesize.
+
+### 8.4 Exploration Tools (Not Part of Pipeline)
+
+NotebookLM, Gemini, Microsoft 365 Copilot — allowed for understanding and pattern exploration. NOT allowed for tagging or pipeline output.
+
+---
+
+## 9. Model-Agnostic Prompt Export
+
+Resources are limited. API access may be unavailable, expensive, or interrupted. The system must support using **any LLM** (Gemini, GPT-4, Claude via chat UI, Gemma, local models) for ingestion or validation — not just the Anthropic API.
+
+### 9.1 Export Formats
+
+The Vercel app exports the prompt + payload in two formats:
+
+**JSON (for automation and API calls):**
+```json
+{
+  "export_type": "ingestion | validation",
+  "ontology_version": "v3.0",
+  "prompt_version": "v3.1",
+  "system_prompt": "string — full system prompt including controlled vocabulary",
+  "user_message": "string — document text + context",
+  "expected_output_schema": { },
+  "instructions": "string — how to use this export"
+}
+```
+
+**Markdown (for human reading and chat UI pasting):**
+```markdown
+# SurvivingSOGICE — Ingestion Prompt Export
+**Ontology version:** v3.0
+**Prompt version:** v3.1
+**Document ID:** doc_abc123
+
+## How to use this
+1. Copy the SYSTEM PROMPT below into your LLM's system prompt field
+2. Copy the DOCUMENT CONTEXT below into the user message field
+3. The LLM should respond with JSON matching the EXPECTED OUTPUT SCHEMA
+4. Paste the LLM's response back into the Vercel app's "Import external output" field
+
+## SYSTEM PROMPT
+[full system prompt here]
+
+## DOCUMENT CONTEXT
+[document text and metadata here]
+
+## EXPECTED OUTPUT SCHEMA
+```json
+{ ... }
+```
+
+## Validation notes
+This output will be validated against the schema when imported. Non-conforming output will be flagged for manual correction.
+```
+
+### 9.2 Import Back
+
+The Vercel app accepts pasted/uploaded LLM output and:
+1. Validates against the expected schema
+2. If valid: imports as that document's classification (tagged as produced by external model in `ai_metadata.primary_model`)
+3. If invalid: displays schema errors and allows manual correction
+
+### 9.3 When to Use Model-Agnostic Mode
+
+- API quota exhausted or expensive
+- Testing whether findings replicate across models (methodological value for PhD)
+- Collaborators without API access
+- Local/offline model use (Gemma, Llama, etc.)
+- Cross-model disagreement study
+
+### 9.4 Consistency Guidelines
+
+When using non-Claude models:
+- Always use the official export format; do not hand-edit prompts
+- Record which model was used in `ai_metadata.primary_model`
+- Expect minor output variation; the schema validator catches structural issues
+- For Tier 3 documents, still trigger validation via a different model
+
+---
+
+## 10. Human Review Layer
+
+### 10.1 Key Principle
+
+The researcher does NOT manually read every document end-to-end. The system extracts; the human validates.
+
+### 10.2 Human Review #1 — Post-Claude
+
+1. Review Type, Format, Evidence tags (Evidence can be multiple)
+2. Review Country (organization's country, not language)
+3. Review Tactics (consult Tagging Guide)
+4. Review Term tags (promotional use only)
+5. Set Scope, Flags, Landmark tags
+6. Set document date with confidence
+7. Review candidate terms — **approving marks as `draft` (immediately taggable)**
+8. Review suggested actors/networks — approving adds to Entity Registry
+9. Review extractable assets
+10. Confirm or override tier assignment
+11. Save to Sanity
+
+### 10.3 Human Review #2 — Post-Validation
+
+Only for validated documents:
+1. Review Claude vs. validation LLM disagreements
+2. Review additional tag suggestions from validation
+3. Review additional assets from validation
+4. Accept / reject / override
+5. Advance to `verified`
+
+### 10.4 Publication
+
+Only the researcher sets `workflowStatus: "published"`. Only Tier 3 documents reach this state. All draft lexicon terms used in the document must be at `validated` lexicon status (§13).
+
+---
+
+## 11. Token Economy and Payload Design
+
+### 11.1 Cost Model
+
+~$0.10–0.40 per Claude document. Validation runs on batches (amortized cost lower). Token efficiency is critical.
+
+### 11.2 Reduction Strategies
+
+**Input:** Preprocessing strips noise. Documents over 24k chars truncated (16k head + 6k tail). SRT/VTT timestamps stripped. Boilerplate removed.
+
+**System prompt:** Compact vocabulary lists. Definitions only for terms requiring contextual classification. Anthropic prompt caching.
+
+**Output:** Prose summary (~150–200 tokens vs. former 5-section note ~250–500). Compact tag arrays. Candidate terms only when genuinely new.
+
+**Payload split:** LLM returns compact classification payload (~500–1,500 tokens). Vercel app wraps it in full Sanity schema with IDs, timestamps, provenance.
+
+### 11.3 Compact Classification Payload (LLM output)
+
+```json
+{
+  "type": "string",
+  "format": "string",
+  "evidence": ["string"],
+  "country": ["string"],
+  "tactic": ["string"],
+  "actor": ["string"],
+  "network": ["string"],
+  "practice": ["string"],
+  "term": ["string"],
+  "harm": ["string"],
+  "migration": ["string"],
+  "function": ["string"],
+  "scope": "string",
+  "landmark": ["string"],
+  "narrative_register": "string",
+  "document_date": {"year": 0, "confidence": "string"},
+  "summary": "string — 80-150 words",
+  "priority": [0, 0, 0, 0, 0],
+  "testimony_flag": false,
+  "needs_review": false,
+  "confidence": {"overall_score": 0.0, "status": "string", "reasons": []},
+  "field_confidence": {},
+  "candidate_terms": [],
+  "suggested_actors": [],
+  "suggested_networks": [],
+  "extractable_assets": []
+}
+```
+
+### 11.4 URL Harvesting — Zero LLM Cost
+
+Deterministic regex/DOM parsing. Zero tokens. Domain context for LLM limited to ~20–50 tokens if needed — never full URL lists.
+
+---
+
+## 12. Entity Model — Six Entity Types
+
+Every entity exists once. Documents link to entities. Seed data in `Entity_Registry_v1.1.md`. Full schemas in `SOGICE_Ontology_v3.0.md`.
+
+**Person · Organization · Law/Policy · Event · LegalDefinition · ExclusionClause**
+
+---
+
+## 13. Lexicon Lifecycle and Validation
+
+This section defines how the Lexicon grows from candidate terms to a validated SOGICE Wikipedia. This is the most important single system in the platform for long-term research value — the Lexicon, with its evidence dossiers and interconnected entries, is where the archive transforms into a navigable knowledge base.
+
+### 13.1 The Four Stages
+
+```
+candidate  → LLM flagged in 1 document
+             human reviews
+                ↓ approve            ↓ dismiss
+             draft                  discarded
+
+draft      → HUMAN-APPROVED, IMMEDIATELY TAGGABLE
+             added to system prompt as approved term
+             every new document appearance collected as evidence
+             accumulates: excerpts, source documents, locations,
+                          frequency, language variants, actors using
+
+             (periodic lexicon validation — researcher-triggered)
+                ↓
+             LLM reviews all accumulated evidence
+                ↓
+             outputs per-term recommendation:
+                ↓ confirm       ↓ revise        ↓ merge         ↓ reject
+             validated       re-draft        merged           rejected
+                             (new def)       (absorbed)       (not SOGICE)
+
+validated  → confirmed through evidence review
+             published on SOGICE Wikipedia
+             stable tagging target
+             can appear on Tier 3 public documents
+
+rejected   → kept in database for audit trail
+             not shown publicly
+```
+
+### 13.2 Why Drafts Are Immediately Taggable
+
+Earlier designs treated `draft` as gated — not taggable until validation promoted them. This failed because:
+- If a term is interesting enough to approve as a draft, it's interesting enough to track
+- If the system can't tag it, subsequent documents using the term lose the evidence trail
+- Lexicon validation becomes possible only when enough evidence has accumulated — which requires immediate tagging
+
+Making drafts immediately taggable means the system **collects evidence actively** from the moment of approval. Validation becomes an evidence-rich health check, not a thin gate.
+
+### 13.3 Term Evidence Model
+
+Every draft and validated term maintains an evidence dossier:
+
+```json
+{
+  "term": "Oxygen-Gideon",
+  "status": "candidate | draft | validated | rejected",
+  "proposed_cluster": "string",
+  "function": "string",
+  "draft_definition": "string",
+  "approved_by": "researcher | intern | null",
+  "approved_at": "ISO datetime",
+  "approved_from_document": "doc_id",
+
+  "evidence_dossier": [
+    {
+      "document_id": "doc_id",
+      "excerpt": "string — under 15 words",
+      "language": "ISO 639-1",
+      "stance_profile": "promotional | critical_advocacy | legal_administrative | research_clinical",
+      "confidence": 0.0,
+      "extracted_by": "llm_primary | llm_validation | human",
+      "context_date": "ISO date"
+    }
+  ],
+
+  "frequency": 0,
+  "languages_seen": ["ISO 639-1 codes"],
+  "actors_using": ["entity _id"],
+  "first_seen": "ISO datetime",
+  "last_seen": "ISO datetime",
+  "last_reanalyzed": "ISO datetime | null",
+
+  "validation_history": [
+    {
+      "run_date": "ISO datetime",
+      "model": "string",
+      "recommendation": "confirm | revise | merge | reject",
+      "reasoning": "string",
+      "resolved_by_researcher": "boolean"
+    }
+  ],
+
+  "merge_target": "term _id | null",
+  "related_terms": [{"term_id": "string", "relationship": "synonym_of | successor_to | euphemism_for | derived_from | translates_to"}]
+}
+```
+
+### 13.4 Lexicon Validation (Track B)
+
+Lexicon validation is a **separate LLM pass from document validation**. It reviews accumulated evidence for terms, not individual document classifications.
+
+**Trigger:** Researcher initiates. Can run on:
+- All draft terms
+- A specific cluster
+- Terms above a frequency threshold (e.g., 3+ evidence excerpts)
+- A specific term by ID
+- Existing validated terms (health check for drift)
+
+**What the validation LLM receives per term:**
+- Draft definition
+- Full evidence dossier (all excerpts, sources, languages)
+- Existing Lexicon entries for the proposed cluster (merge detection)
+- Ontology cluster definitions
+
+**What it outputs:**
+```json
+{
+  "term": "string",
+  "recommendation": "confirm | revise | merge | reject",
+  "suggested_cluster": "string",
+  "definition_revision": "string — null if no change",
+  "merge_candidates": [{"term_id": "string", "similarity_reason": "string"}],
+  "cluster_drift_detected": "boolean",
+  "reasoning": "string"
+}
+```
+
+**What the researcher does:**
+- Reviews each recommendation
+- Confirms, modifies, or rejects
+- Approved recommendations update the term's status
+
+### 13.5 Lexicon Reanalysis — Health Check for Validated Terms
+
+The same validation process can be run on already-validated terms to detect drift: a term's use pattern may have shifted over time as the corpus grew.
+
+**Example:** "Therapeutic Choice" was validated in batch 3 based on 5 excerpts showing promotional legislative use. By batch 20, 15 new excerpts show the term being used in different contexts — some critical, some legal-administrative. Reanalysis flags: "definition may need revision; stance distribution has shifted."
+
+This is how the Lexicon stays accurate over time.
+
+### 13.6 Lexicon on the Public Archive
+
+For every `validated` term, the public Lexicon page shows:
+- Definition
+- Cluster and function
+- Related terms (clickable)
+- Multilingual variants with attestation tiers
+- **Full evidence dossier** — every document excerpt where the term appears (respecting document tier: only Tier 3 document excerpts shown publicly)
+- Actors who use the term
+- Legal instruments that reference or contest it
+- Timeline of use across the corpus
+
+This is the "SOGICE Wikipedia" function — and it's only possible because drafts are tracked from first approval.
+
+### 13.7 Tier Interaction
+
+- Draft terms can appear on Tier 1 and Tier 2 documents
+- Only `validated` terms can appear on Tier 3 (published) documents
+- A Tier 3 document cannot be published until all the draft terms it uses have been promoted to `validated`
+
+This creates natural pressure to run lexicon validation before publishing important documents.
+
+---
+
+## 14. JSON Schema — Document Record
+
+The LLM produces the compact payload (§11.3). The Vercel app constructs the full record:
+
+```json
+{
+  "_type": "document",
+  "_id": "UUID",
+  "workflowStatus": "unverified | in_progress | verified | published",
+  "tier": "1 | 2 | 3",
+  "tier_assigned_by": "auto | researcher",
+  "tier_change_log": [{"from": "", "to": "", "changed_at": "", "reason": ""}],
+
+  "meta": {
+    "source_url": "string",
+    "archive_url": "string — auto-populated by Wayback check",
+    "file_ref": "string — Sanity file asset reference",
+    "ingested_at": "ISO datetime",
+    "ingestion_batch": "string",
+    "preprocessing_tool": "unstructured | docling | yt-dlp | whisper | manual",
+    "preprocessing_quality": "high | medium | low"
+  },
+
+  "provenance": {
+    "original_url": "string",
+    "accessed_via": "string",
+    "wayback_url": "string",
+    "html_snapshot_ref": "Sanity file asset ID",
+    "chain_notes": "string"
+  },
+
+  "classification": {
+    "type": "string",
+    "format": "string",
+    "evidence": ["string — one or more"],
+    "scope": "string",
+    "country": ["string"],
+    "tactic": ["string"],
+    "actor": ["string"],
+    "network": ["string"],
+    "practice": ["string"],
+    "term": ["string"],
+    "harm": ["string"],
+    "migration": ["string"],
+    "function": ["string"],
+    "landmark": ["string"],
+    "flags": ["string"]
+  },
+
+  "confidence": {
+    "overall_score": 0.0,
+    "status": "high | medium | low",
+    "reasons": ["string"]
+  },
+
+  "field_confidence": {},
+
+  "document_date": {
+    "year": "number",
+    "month": "number",
+    "day": "number",
+    "date_confidence": "exact | approximate | unknown"
+  },
+
+  "entities": {
+    "actors_linked": ["entity _id"],
+    "networks_linked": ["entity _id"],
+    "laws_linked": ["entity _id"],
+    "events_linked": ["entity _id"],
+    "legal_definitions_linked": ["LegalDefinition _id"],
+    "exclusion_clauses_linked": ["ExclusionClause _id"]
+  },
+
+  "content": {
+    "title": "string",
+    "summary": "string — 80-150 words prose",
+    "summary_validation": "string — null if not validated",
+    "narrative_register": "string",
+    "language_detected": "ISO 639-1",
+    "word_count": "number"
+  },
+
+  "referenced_urls": [{"url": "", "anchor_text": "", "link_type": "", "domain": "", "resolved": false, "archive_url": ""}],
+
+  "social_media": {"account_name": "", "follower_count_at_capture": 0, "hashtags": [], "part_of_series": false, "series_id": ""},
+
+  "priority_score": {
+    "artistic": "1-5",
+    "network": "1-5",
+    "lexicon": "1-5",
+    "testimony": "1-5",
+    "historical": "1-5"
+  },
+
+  "extractable_assets": [
+    {
+      "asset_type": "prayer_script | testimony_excerpt | conversion_script | course_structure | statistical_claim | network_connection | terminology_coinage | visual_asset | legislative_quote | counter_sermon",
+      "content": "string",
+      "target_module": "string",
+      "extracted_by": "llm_primary | llm_validation | human"
+    }
+  ],
+
+  "candidate_terms": [
+    {
+      "term": "string",
+      "language": "ISO 639-1",
+      "proposed_category": "string",
+      "promotional_use": "boolean",
+      "draft_definition": "string",
+      "context_quote": "string",
+      "approved": "boolean",
+      "new_status": "discarded | draft | null"
+    }
+  ],
+
+  "validation": {
+    "status": "not_validated | queued | validated",
+    "validation_trigger": "string",
+    "pre_validation_confidence": 0.0,
+    "post_validation_confidence": 0.0,
+    "validated_by": "string",
+    "validated_at": "ISO datetime",
+    "resolution": "string"
+  },
+
+  "ai_metadata": {
+    "primary_model": "string",
+    "primary_provider": "string",
+    "validation_model": "string",
+    "validation_provider": "string",
+    "prompt_version": "string",
+    "ontology_version": "string",
+    "processing_date": "ISO datetime",
+    "input_length_chars": "number",
+    "truncated": "boolean",
+    "agreement_status": "agreed | disagreed | not_validated",
+    "disagreements": ["string"],
+    "resolution": "accepted_primary | accepted_validation | human_override | not_applicable",
+    "human_review": {
+      "reviewed_by": "researcher | intern",
+      "reviewed_at": "ISO datetime",
+      "changes_made": "boolean"
+    },
+    "algorithmic_preprocessing": {"tool": "string", "preprocessing_quality": "string"}
+  },
+
+  "zotero": {"collection": "string", "exported_at": "ISO datetime"}
+}
+```
+
+**Note:** `extracted_text` and `embedding_vector` stored but excluded from this listing. `embedding_vector` excluded from public export.
+
+---
+
+## 15. Testimony as a Separate Content Type
+
+First-class objects: independently queryable, consent-controlled.
+
+**Schema fields:** source_document, source_location, testimony_type, consent_status, public_display (false by default), country_of_experience, denomination, practices_described, period, historical_period, extracted_text, narrative_module_flag, ai_metadata.
+
+**Consent:** Records with `consent_status: "unclear"` require researcher review before `public_display: true`. Contact page exists for testimony subjects to request removal.
+
+**Tier interaction:** Testimony records default to Tier 2. Tier 3 requires explicit consent review.
+
+---
+
+## 16. Landmark Events and Scope Logic
+
+### 16.1 Landmark Vocabulary
+
+Named events that restructured the SOGICE landscape. Full vocabulary in `SOGICE_Ontology_v3.0.md` §II. Includes international reports, organizational scandals, legislative landmarks, court cases, scientific milestones.
+
+### 16.2 Scope Tiers
+
+`Core` (European SOGICE) · `Contextual` (non-European, European relevance) · `Reference` (global/foundational). Upgrade allowed; downgrade requires logged reason.
+
+---
+
+## 17. URL Harvesting and Web Archiving
+
+### 17.1 Automatic Archiving
+
+On URL submission in Vercel app: query Wayback API → if exists, store URL → if not, trigger save → store HTML snapshot as Sanity asset.
+
+### 17.2 URL Harvesting (Zero LLM Cost)
+
+Deterministic regex/DOM parsing extracts outbound URLs. Stores domain, anchor text, link type. Domain context for LLM limited to ~20–50 tokens if needed.
+
+---
+
+## 18. Experience Modules
+
+### 18.1 JUST CHANGE™ *(active development)*
+
+Critical RPG. Single HTML file. `g.conv` (0→1) drives state. You always lose. Current: ZAP!, Cost of Amen, Overworld v6, rhythm game, Turn For Me. Target: 19 games. Crayon-Prophet aesthetic.
+
+### 18.2 SOGICE WebSearch Simulation, Retro SOGICE Library, Video Library, Historical Visualizer, Trans Jesus Ministries Live, Courses & Ministries Tracker, PC Simulator, SOGICEfy, HOPE TV
+
+All draw on the same archive and lexicon. Full descriptions in PRD v3.0 archive (superseded sections).
+
+---
+
+## 19. WebXR and i-Doc Architecture
+
+Projection layer reading from archive. Three.js · WebXR · JavaScript · Vercel hosting · Sanity data. Shadow play / light box aesthetic. Sequential documentary rooms + spatial archive.
+
+---
+
+## 20. Storage, Backup, and Preservation
+
+**Sanity** — live database + all binary files
+**GitHub** — markdown docs, folder structure, JSON backups (per batch or daily)
+**Internet Archive** — large videos, documentaries
+**Supabase** — PostgreSQL schema must include a `content_embedding vector(1536)` column on the document record from initial schema definition — column stays null until Phase 2 batch embedding.
+
+---
+
+## 21. Users and Permissions
+
+| User | Read | Write | Publish (Tier 3) | API Keys |
+|---|---|---|---|---|
+| Researcher | All | All | Yes | Holds keys |
+| Intern | All | Tags, log, lexicon drafts | No (verified only) | Via Vercel |
+| Collaborator | All | Same as intern | No | Via Vercel |
+| Public | Tier 3 published only | No | No | No |
+
+---
+
+## 22. Non-Functional Requirements
+
+Availability after PhD · 2–3 concurrent writers · no subscription for collaborators · Norwegian/EU hosting · three-tier content visibility · multilingual sources · JSON/CSV/Zotero export · FAIR compliance · AI transparency on public records · human-in-the-loop · adaptive validation audit trail · model-agnostic prompt export · cost control (~$0.10–0.40/doc)
+
+---
+
+## 23. Intern Checklist
+
+### Before Tagging
+
+Term tags = promotional use only. Country = organization's country. References: `TAGGING_GUIDE.md` · `SOGICE_Ontology_v3.0.md` · `SOGICE_Lexicon_v2.0.md`.
+
+### Per Document
+
+1. Preprocess if needed
+2. Submit in Vercel app (URL auto-archived)
+3. Review Claude output: Type/Format/Evidence/Country/Tactic/Term/Scope/Flags/Landmark/Date
+4. Review candidate terms → approve enters Lexicon as draft (taggable immediately)
+5. Review suggested entities → approve enters Registry
+6. Review extractable assets
+7. Confirm or adjust tier
+8. Save to Sanity
+
+### End of Batch
+
+- All required fields assigned
+- No Term tags for criticism-only use
+- All candidate terms resolved (approved as draft or dismissed)
+- All suggested entities resolved
+- Testimony flags noted
+- JSON exported to GitHub
+
+---
+
+## 24. Phase Structure and Milestones
+
+| Phase | Focus | Deliverables |
+|---|---|---|
+| **0** | Ontology + tools | Ontology v3.0 · Lexicon v2.0 · Sanity schema · Vercel app · preprocessing scripts |
+| **0.5 — Pilot** | Calibration | 10–20 representative documents through full pipeline · confidence thresholds calibrated · validation triggers tuned · lexicon validation process tested |
+| **1** | Ingestion | Growing corpus via adaptive validation pipeline · lexicon expanding from candidate → draft → validated |
+| **2** | Analysis | BERTopic · network graph · semantic map · lexicon reanalysis for drift · pgvector extension enabled in Supabase · batch embedding of all Tier 2/3 validated documents using model TBD (see Q22) · semantic clustering for lexicon drift detection · cross-language pattern matching across Norwegian/Portuguese/Italian/French/German documents |
+| **3** | Public infrastructure | Archive + SOGICE Wikipedia (lexicon frontend) · network viz |
+| **4** | Experience layer | JUST CHANGE™ · all modules · WebXR · i-Doc shell |
+
+**Pilot batch (Phase 0.5):** 10–20 documents covering a representative mix of document types, languages, and tiers. Outcomes:
+- Confidence thresholds calibrated from observed Claude scores vs. classification quality
+- Validation trigger percentages set (recommended %, random audit %)
+- Lexicon validation process tested on the first batch of candidate terms
+- Model-agnostic export tested with at least one non-Claude model
+- Preprocessing quality calibration
+
+**June 2026:** JUST CHANGE™ WIP. Phase 1 ingestion active.
+**October 2026:** Full exhibition, public archive live.
+
+---
+
+## 25. Methodological Position
+
+The SurvivingSOGICE system does not eliminate uncertainty. It structures, exposes, and manages it.
+
+The PhD contribution is:
+- **Adaptive validation under constraint** — a realistic methodology for AI-assisted discourse analysis when comprehensive validation is not feasible
+- **Evidence-based lexicon building** — terms traceable to document excerpts, validated through accumulated evidence, subject to reanalysis for drift
+- **Trust tiering** — documents are not treated uniformly; rigor matches destination
+- **Model-agnostic methodology** — the approach can be replicated with any LLM, not tied to Anthropic or OpenAI
+- **Transformation of harmful discourse into navigable, creative, and educational structures** — the archive and lexicon are inputs for artistic and pedagogical work, not endpoints
+
+This is not a benchmark classification system. It is a digital humanities methodology for making hidden and harmful discourse legible, contestable, and creatively usable.
+
+---
+
+## 26. Open Questions
+
+| # | Question | Status |
+|---|---|---|
+| 5 | Norwegian org rebranding histories (Foreldrenettverket, HBRS) | Open — populate from corpus |
+| 10 | "Oxygen-Gideon" — not on iftcc.org/operation-gideon; requires corpus search | Open |
+| 13 | France ExclusionClause (youth transition concerns) | Open |
+| 14 | JUST CHANGE™ i-Doc integration method | Open |
+| 17 | ChatGPT validation prompt — final version | Open — Phase 0 deliverable |
+| 18 | Testimony removal protocol | Contact page exists; formal protocol TBD |
+| 19 | Confidence thresholds for validation bands | Open — calibrated in pilot batch |
+| 20 | Random audit percentage | Open — calibrated in pilot batch |
+| 21 | Batch composition defaults | Open — calibrated in pilot batch |
+| 22 | Embedding model for Phase 2 semantic layer — options: OpenAI `text-embedding-3-small` (commercial API, conflicts with model-agnostic principle §9) vs. `paraphrase-multilingual-mpnet-base-v2` (local, no API dependency, handles all corpus languages natively) | Open — decide at Phase 2 start |
+
+**Resolved:** Q7 (Blanchard → Anti-Trans) · Q11 (France harm threshold → model it) · Q12 (Physical-Coercion + Verbal-Abuse-Humiliation → added) · Q3 (domain → survivingsogice.eu) · Q15 (documentaries → Internet Archive) · Q16 (builder → Sérgio + Claude/Codex)
+
+---
+
+*Companion documents: SOGICE_Ontology_v3.0.md · SOGICE_Lexicon_v2.0.md · Entity_Registry_v1.1.md · TAGGING_GUIDE.md*

@@ -632,4 +632,4 @@ Carried forward from PRD v2.0 §6.4–6.5:
 
 *SOGICE Lexicon v2.0 · April 2026 · SurvivingSOGICE PhD Research Archive · University of Bergen*
 *Living document — grows with every ingestion batch*
-*Companion: SOGICE_Ontology_v3.0.md · PRD_v3.0.md*
+*Companion: SOGICE_Ontology_v3.0.md · PRD_v3.1.md*

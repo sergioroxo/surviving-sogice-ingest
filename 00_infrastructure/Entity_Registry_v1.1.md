@@ -1,7 +1,7 @@
-# SurvivingSOGICE — Entity Registry v1.0
+# SurvivingSOGICE — Entity Registry v1.1
 **University of Bergen · SurvivingSOGICE PhD Research Archive**
 *Phase 0 Document · Seed list — expand as corpus ingestion reveals new entities*
-*Companion: SOGICE_Ontology_v2.1.md*
+*Companion: SOGICE_Ontology_v3.0.md · PRD_v3.1.md*
 
 ---
 
@@ -799,5 +799,5 @@ The entry "Norway conversion therapy hearing process (2022)" in Part 3 should be
 
 ---
 
-*Entity Registry v1.1 · April 2026 · Additions from deep research validation*
+*Entity Registry v1.1 · April 2026 · SurvivingSOGICE PhD Research Archive · University of Bergen*
 

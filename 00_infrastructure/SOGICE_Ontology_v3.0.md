@@ -2,7 +2,7 @@
 
 **University of Bergen · SurvivingSOGICE PhD Research Archive**
 *Phase 0 Document · Merges Ontology v2.1 and v2.2 additions into a single authoritative reference*
-*Companion documents: SOGICE_Lexicon_v2.0.md · PRD_v3.0.md · Entity_Registry_v1.1.md*
+*Companion documents: SOGICE_Lexicon_v2.0.md · PRD_v3.1.md · Entity_Registry_v1.1.md*
 
 ---
 
@@ -480,4 +480,4 @@ Not the Sanity schema. Not the LLM system prompt. Not the Lexicon (term definiti
 ---
 
 *SOGICE Discourse Ontology v3.0 · April 2026 · SurvivingSOGICE PhD Research Archive · University of Bergen*
-*Companion documents: SOGICE_Lexicon_v2.0.md · PRD_v3.0.md · Entity_Registry_v1.1.md · TAGGING_GUIDE.md*
+*Companion documents: SOGICE_Lexicon_v2.0.md · PRD_v3.1.md · Entity_Registry_v1.1.md · TAGGING_GUIDE.md*
