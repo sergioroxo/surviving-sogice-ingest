@@ -1,0 +1,62 @@
+from dataclasses import dataclass, field
+from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+
+@dataclass
+class Config:
+    anthropic_api_key: str
+    sanity_project_id: str
+    sanity_dataset: str
+    sanity_write_token: str
+    supabase_url: str
+    supabase_service_key: str
+
+    corpus_dir: Path
+    exports_dir: Path
+
+    ollama_base_url: str
+    embedding_model: str
+    local_analysis_model: str
+    claude_model: str
+
+    @property
+    def sanity_api_base(self) -> str:
+        return f"https://{self.sanity_project_id}.api.sanity.io/v2024-01-01/data/mutate/{self.sanity_dataset}"
+
+
+def load_config() -> Config:
+    missing = []
+    required = ["ANTHROPIC_API_KEY", "SANITY_PROJECT_ID", "SANITY_DATASET",
+                 "SANITY_WRITE_TOKEN", "SUPABASE_URL", "SUPABASE_SERVICE_KEY"]
+    for key in required:
+        if not os.getenv(key):
+            missing.append(key)
+    if missing:
+        raise EnvironmentError(
+            f"Missing required environment variables: {', '.join(missing)}\n"
+            "Copy runner/.env.example to runner/.env and fill in your keys."
+        )
+
+    corpus_dir = Path(os.getenv("CORPUS_DIR", "~/survivingsogice/corpus")).expanduser()
+    exports_dir = Path(os.getenv("EXPORTS_DIR", "~/survivingsogice/exports")).expanduser()
+    corpus_dir.mkdir(parents=True, exist_ok=True)
+    exports_dir.mkdir(parents=True, exist_ok=True)
+
+    return Config(
+        anthropic_api_key=os.environ["ANTHROPIC_API_KEY"],
+        sanity_project_id=os.environ["SANITY_PROJECT_ID"],
+        sanity_dataset=os.environ["SANITY_DATASET"],
+        sanity_write_token=os.environ["SANITY_WRITE_TOKEN"],
+        supabase_url=os.environ["SUPABASE_URL"],
+        supabase_service_key=os.environ["SUPABASE_SERVICE_KEY"],
+        corpus_dir=corpus_dir,
+        exports_dir=exports_dir,
+        ollama_base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+        embedding_model=os.getenv("EMBEDDING_MODEL", "qwen3-embedding:4b"),
+        local_analysis_model=os.getenv("LOCAL_ANALYSIS_MODEL", "gemma4:e4b"),
+        claude_model=os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6"),
+    )

@@ -1,0 +1,186 @@
+"""
+Pydantic models that mirror the ingestion-v3.1 output schema exactly.
+AnalysisResult validates Claude's or Ollama's JSON response.
+IntakeResult and PreprocessResult carry pipeline state between stages.
+"""
+from __future__ import annotations
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Literal, Optional
+from pydantic import BaseModel, Field
+
+
+# ---------------------------------------------------------------------------
+# ingestion-v3.1 output schema
+# ---------------------------------------------------------------------------
+
+class DocumentDate(BaseModel):
+    year: int = 0
+    month: int = 0
+    day: int = 0
+    confidence: Literal["exact", "approximate", "unknown"] = "unknown"
+
+
+class Priority(BaseModel):
+    artistic: int = Field(default=1, ge=1, le=5)
+    network: int = Field(default=1, ge=1, le=5)
+    lexicon: int = Field(default=1, ge=1, le=5)
+    testimony: int = Field(default=1, ge=1, le=5)
+    historical: int = Field(default=1, ge=1, le=5)
+
+
+class ConfidenceSignals(BaseModel):
+    text_quality: Literal["clean", "noisy"] = "clean"
+    language_clarity: Literal["clear", "mixed", "unclear"] = "clear"
+    content_structure: Literal["well-structured", "ambiguous"] = "well-structured"
+
+
+class Confidence(BaseModel):
+    overall_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    status: Literal["high", "medium", "low"] = "low"
+    reasons: list[str] = Field(default_factory=list)
+    signals: ConfidenceSignals = Field(default_factory=ConfidenceSignals)
+
+
+class LowConfidenceReason(BaseModel):
+    field: str
+    issue: str
+    severity: Literal["low", "medium", "high"] = "low"
+
+
+class FieldConfidence(BaseModel):
+    type: float = Field(default=1.0, ge=0.0, le=1.0)
+    format: float = Field(default=1.0, ge=0.0, le=1.0)
+    tactic: float = Field(default=1.0, ge=0.0, le=1.0)
+    term: float = Field(default=1.0, ge=0.0, le=1.0)
+    actor: float = Field(default=1.0, ge=0.0, le=1.0)
+    scope: float = Field(default=1.0, ge=0.0, le=1.0)
+    low_confidence_reasons: list[LowConfidenceReason] = Field(default_factory=list)
+
+
+class CandidateTerm(BaseModel):
+    term: str
+    language: str
+    proposed_category: str
+    promotional_use: bool = True
+    draft_definition: str
+    context_quote: str
+
+
+class SuggestedActor(BaseModel):
+    name: str
+    type: Literal["person", "organization"]
+    country: str
+    role: str
+    evidence_quote: str
+
+
+class SuggestedNetwork(BaseModel):
+    name: str
+    description: str
+    evidence_quote: str
+
+
+class ExtractableAsset(BaseModel):
+    asset_type: Literal[
+        "prayer_script", "testimony_excerpt", "conversion_script",
+        "course_structure", "statistical_claim", "network_connection",
+        "terminology_coinage", "visual_asset", "legislative_quote", "counter_sermon",
+    ]
+    content: str
+    target_module: str
+    extracted_by: str = "llm_primary"
+
+
+DocumentType = Literal[
+    "Pro-SOGICE", "Anti-SOGICE", "Neutral-Academic", "Legal-Instrument",
+    "Testimony", "Media-Coverage", "Internal-Org-Document", "Mixed",
+]
+
+DocumentFormat = Literal[
+    "Website-Page", "Blog-Post", "Social-Media-Post", "Video", "Podcast",
+    "Academic-Paper", "NGO-Report", "Government-Report", "Court-Judgment",
+    "Legislative-Submission", "Parliamentary-Debate", "Press-Release",
+    "Book", "Book-Chapter", "Pamphlet", "Newsletter", "Email",
+    "Manual", "Course-Material", "Event-Program", "Other",
+]
+
+NarrativeRegister = Literal[
+    "Pastoral-Healing", "Scientific-Clinical", "Legal-Policy", "Testimonial-Personal",
+    "Conspiratorial", "Activist-Advocacy", "Journalistic", "Academic-Analytical", "Mixed",
+]
+
+Scope = Literal["Core", "Contextual", "Reference"]
+
+
+class AnalysisResult(BaseModel):
+    """Exact mirror of the ingestion-v3.1 JSON output schema."""
+    type: DocumentType
+    format: DocumentFormat
+    evidence: list[str]
+    scope: Scope
+    country: list[str] = Field(default_factory=list)
+    tactic: list[str] = Field(default_factory=list)
+    actor: list[str] = Field(default_factory=list)
+    network: list[str] = Field(default_factory=list)
+    practice: list[str] = Field(default_factory=list)
+    term: list[str] = Field(default_factory=list)
+    harm: list[str] = Field(default_factory=list)
+    migration: list[str] = Field(default_factory=list)
+    function: list[str] = Field(default_factory=list)
+    landmark: list[str] = Field(default_factory=list)
+    flags: list[str] = Field(default_factory=list)
+    narrative_register: NarrativeRegister
+    document_date: DocumentDate = Field(default_factory=DocumentDate)
+    summary: str
+    priority: Priority = Field(default_factory=Priority)
+    testimony_flag: bool = False
+    needs_review: bool = False
+    confidence: Confidence = Field(default_factory=Confidence)
+    field_confidence: FieldConfidence = Field(default_factory=FieldConfidence)
+    candidate_terms: list[CandidateTerm] = Field(default_factory=list)
+    suggested_actors: list[SuggestedActor] = Field(default_factory=list)
+    suggested_networks: list[SuggestedNetwork] = Field(default_factory=list)
+    extractable_assets: list[ExtractableAsset] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Pipeline state models (passed between pipeline stages)
+# ---------------------------------------------------------------------------
+
+@dataclass
+class IntakeResult:
+    doc_id: str
+    source: str                            # original URL or file path string
+    source_type: Literal["url", "pdf", "html", "video", "audio", "epub", "srt"]
+    declared_type: str                     # user-supplied or auto-detected document type
+    tier: int                              # 1 | 2 | 3
+    batch_id: str
+    language: Optional[str]               # ISO 639-1, None if unknown at intake
+    archive_url: Optional[str] = None     # Wayback Machine URL once archived
+    local_dir: Optional[Path] = None      # ~/survivingsogice/corpus/{doc_id}/
+
+
+@dataclass
+class PreprocessResult:
+    doc_id: str
+    tool_used: str                         # "docling" | "unstructured" | "trafilatura" | "whisper" | "manual"
+    quality: Literal["high", "medium", "low", "blocked"]
+    text: str                              # clean extracted text (primary context for LLM)
+    markdown: Optional[str] = None        # structure-preserving markdown (Docling output)
+    ocr_images: list[dict] = field(default_factory=list)   # [{imageRef, ocrText, ocrConfidence}]
+    char_count: int = 0
+    truncated: bool = False
+    language_detected: Optional[str] = None
+
+
+@dataclass
+class DocumentPackage:
+    """Everything assembled after all pipeline stages complete."""
+    intake: IntakeResult
+    preprocess: PreprocessResult
+    analysis: AnalysisResult
+    embedding: list[float]
+    embedding_model: str
+    llm_used: str                          # "claude" | "gemma4:e4b" | "both"
+    local_dir: Path
