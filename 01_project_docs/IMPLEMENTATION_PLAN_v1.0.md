@@ -81,10 +81,11 @@ CREATE TABLE document_embeddings (
   embedding_model    text                 -- which model generated this vector
 );
 
-CREATE INDEX ON document_embeddings
-  USING hnsw (content_embedding vector_cosine_ops)
-  WITH (m = 16, ef_construction = 64);
--- Note: ivfflat has a 2000-dimension limit; hnsw supports 2560d and has better recall
+-- INDEX DEFERRED TO PHASE 2:
+-- Both ivfflat and hnsw have a 2000-dimension limit in current Supabase pgvector.
+-- 2560d exceeds this. No index needed at pilot scale (sequential scan is fast enough
+-- for <1000 rows). Add index in Phase 2 once Supabase upgrades pgvector, or truncate
+-- vectors to 2000d using qwen3's Matryoshka support and migrate the column then.
 ```
 
 5. Add Supabase connection string to Vercel environment variables (`SUPABASE_URL`, `SUPABASE_SERVICE_KEY`)
