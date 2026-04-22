@@ -65,7 +65,7 @@ Use `vector(2560)` in Supabase. Verified with `python -m runner embed-test`.
 - [x] Enable pgvector extension
 - [x] Create `document_embeddings` table with `vector(2560)` column
 - [x] ~~Create ivfflat index~~ — **deferred to Phase 2** (pgvector 2000d limit; hnsw also blocked; sequential scan fine at pilot scale)
-- [ ] Add `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` to `runner/.env`
+- [x] Add `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` to `runner/.env`
 - [ ] Test: ingest one document → verify null-vector row appears
 
 ### MVP CLI Runner (`runner/`)
