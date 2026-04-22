@@ -82,8 +82,9 @@ CREATE TABLE document_embeddings (
 );
 
 CREATE INDEX ON document_embeddings
-  USING ivfflat (content_embedding vector_cosine_ops)
-  WITH (lists = 100);
+  USING hnsw (content_embedding vector_cosine_ops)
+  WITH (m = 16, ef_construction = 64);
+-- Note: ivfflat has a 2000-dimension limit; hnsw supports 2560d and has better recall
 ```
 
 5. Add Supabase connection string to Vercel environment variables (`SUPABASE_URL`, `SUPABASE_SERVICE_KEY`)
