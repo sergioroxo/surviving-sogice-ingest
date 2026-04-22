@@ -6,13 +6,12 @@ The vector column dimension must match qwen3-embedding:4b output (Q22).
 """
 from __future__ import annotations
 
-from supabase import create_client, Client
-
 from ..config import Config
 from ..models.document import AnalysisResult
 
 
-def _client(config: Config) -> Client:
+def _client(config: Config):
+    from supabase import create_client
     return create_client(config.supabase_url, config.supabase_service_key)
 
 
