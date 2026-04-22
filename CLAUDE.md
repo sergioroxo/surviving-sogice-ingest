@@ -36,11 +36,12 @@ Long transcripts (SRT, books >40k chars) default to `--llm local`.
 
 | # | Question | Blocks |
 |---|---|---|
-| **Q22** | **Verify `qwen3-embedding:4b` output dimension before creating Supabase column** — run `runner embed-test` once Ollama is set up, inspect vector shape, document here. Old default was 768d (paraphrase-multilingual-mpnet-base-v2). New model may differ. Column dimension is permanent until migration. | **Phase 0-B (BLOCKER)** |
+| ~~**Q22**~~ | ~~Verify `qwen3-embedding:4b` output dimension~~ — **RESOLVED: 2560d** | ~~Phase 0-B~~ unblocked |
 | Q14 | JUST CHANGE™ ↔ i-Doc integration method | Phase 4 October build |
 | Q18 | Testimony removal formal protocol | Phase 3 publication |
 
-**Once Q22 is resolved, write the dimension here:** `qwen3-embedding:4b output dimension = ___d`
+**Q22 resolved (April 2026):** `qwen3-embedding:4b output dimension = 2560d`  
+Use `vector(2560)` in Supabase. Verified with `python -m runner embed-test`.
 
 ---
 
@@ -59,7 +60,7 @@ Long transcripts (SRT, books >40k chars) default to `--llm local`.
 - [ ] Export seed JSON snapshot to `03_data/sanity_seed_YYYY-MM-DD.json`
 
 ### Phase 0-B — Supabase Schema
-- [ ] **Resolve Q22 first** — verify `qwen3-embedding:4b` output dimension
+- [x] **Q22 resolved** — `qwen3-embedding:4b` = **2560d** → use `vector(2560)`
 - [ ] Create Supabase project (EU region)
 - [ ] Enable pgvector extension
 - [ ] Create `document_embeddings` table with correct-dimension vector column

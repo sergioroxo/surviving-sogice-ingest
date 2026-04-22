@@ -58,7 +58,7 @@ The schema design is complete in `SANITY_SCHEMA_v1.0.md`. This step is implement
 
 Supabase holds the embedding vectors for Phase 2 semantic analysis. The `content_embedding` column **must be defined here, in Phase 0**, even though it stays null until Phase 2. Creating it later requires a migration on a populated table — define it now.
 
-**⚠ Q22 MUST be decided before this task begins.** The vector column dimension is permanent until explicitly migrated. Choosing the wrong dimension now means re-embedding the entire corpus later. Default if undecided: Option B — `paraphrase-multilingual-mpnet-base-v2`, 768 dimensions, local, no API cost, covers all six corpus languages natively. If Option B is chosen, use `vector(768)` throughout this task. If Option A (OpenAI `text-embedding-3-small`, 1536d) is chosen, use `vector(1536)`. Do not proceed with a placeholder — decide and document the choice before creating the table.
+**Q22 RESOLVED (April 2026).** Model: `qwen3-embedding:4b` via Ollama. Dimension: **2560d**. Verified with `python -m runner embed-test`. Use `vector(2560)` throughout this task.
 
 **Also define cross-lingual query alignment before Phase 2 begins:** Document how semantic similarity will be interpreted across languages (e.g., does Norwegian "konverteringsterapi" cluster with Portuguese "terapia de conversão" in the vector space?). Add a brief semantic alignment note to `TAGGING_GUIDE.md` when Q22 is resolved.
 
@@ -67,13 +67,13 @@ Supabase holds the embedding vectors for Phase 2 semantic analysis. The `content
 1. **Resolve Q22** — choose embedding model, document decision in open questions table and `TAGGING_GUIDE.md`
 2. Create Supabase project (EU region to match Sanity)
 3. Enable `pgvector` extension: `CREATE EXTENSION IF NOT EXISTS vector;`
-4. Create the document embeddings companion table (substitute `768` or `1536` per Q22 decision):
+4. Create the document embeddings companion table (Q22 resolved: `vector(2560)`):
 
 ```sql
 CREATE TABLE document_embeddings (
-  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   sanity_document_id text NOT NULL UNIQUE,
-  content_embedding  vector(768),         -- dimension per Q22 decision; null until Phase 2
+  content_embedding  vector(2560),        -- qwen3-embedding:4b, verified 2560d
   language           text,                -- ISO 639-1 — for cross-language queries
   tier               text,                -- '1' | '2' | '3' — for tier-filtered search
   validation_status  text,                -- mirrors Sanity validation.status
@@ -526,7 +526,7 @@ Q22 decision (embedding model) ── BLOCKER for 0-B (must decide before creati
 | 19 | Confidence thresholds for validation bands | Phase 1 batch composition | Calibrated in Phase 0.5 |
 | 20 | Random audit percentage | Phase 1 batch defaults | Calibrated in Phase 0.5 |
 | 21 | Batch composition defaults | Phase 1 | Calibrated in Phase 0.5 |
-| 22 | Embedding model — OpenAI `text-embedding-3-small` (1536d, commercial) vs. `paraphrase-multilingual-mpnet-base-v2` (768d, local, covers all 6 corpus languages) — dimension is permanent until migration | **0-B (BLOCKER)** + Phase 2 tasks 6–9 | **Must decide before Phase 0-B starts. Default: Option B (768d local).** |
+| ~~22~~ | ~~Embedding model dimension~~ | ~~0-B~~ | **RESOLVED April 2026: `qwen3-embedding:4b` via Ollama, 2560d. Use `vector(2560)`.** |
 | 14 | JUST CHANGE™ i-Doc integration method | Phase 4 October build | Open |
 | 18 | Testimony removal protocol | Phase 3 publication | Contact page exists; formal protocol TBD |
 
