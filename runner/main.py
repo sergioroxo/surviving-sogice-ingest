@@ -17,7 +17,8 @@ from rich.console import Console
 from rich.panel import Panel
 
 from .config import load_config
-from .pipeline import intake, preprocess, embed, analyze, review, upload
+from .pipeline import embed  # imported directly so embed-test works without full config
+from .pipeline import intake, preprocess, analyze, review, upload
 
 app = typer.Typer(name="runner", add_completion=False)
 console = Console()
@@ -95,14 +96,36 @@ def export_batch(
 
 @app.command(name="embed-test")
 def embed_test():
-    """Run a test embedding and print the vector dimension. Do this before Phase 0-B."""
-    config = load_config()
-    dim = embed.test_dimension(config)
+    """Run a test embedding and print the vector dimension. Do this before Phase 0-B.
+    Only needs Ollama running — no API keys required."""
+    import os
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    model = os.getenv("EMBEDDING_MODEL", "qwen3-embedding:4b")
+
+    console.print(f"Testing [bold]{model}[/bold] at [bold]{ollama_url}[/bold] ...")
+    try:
+        dim = embed.test_dimension(ollama_url, model)
+    except Exception as exc:
+        if "Connect" in type(exc).__name__:
+            console.print(Panel(
+                "[red]Cannot connect to Ollama.[/red]\n\n"
+                "Start it with: [bold]ollama serve[/bold]\n"
+                "Then pull the model: [bold]ollama pull qwen3-embedding:4b[/bold]",
+                title="Connection error",
+            ))
+        else:
+            console.print(Panel(f"[red]{exc}[/red]", title="Error"))
+        raise typer.Exit(1)
+
     console.print(Panel(
-        f"[bold green]qwen3-embedding:4b output dimension: {dim}d[/bold green]\n\n"
-        f"Record this in CLAUDE.md under Open Questions (Q22).\n"
+        f"[bold green]{model}  →  {dim} dimensions[/bold green]\n\n"
+        f"Record this in CLAUDE.md under Open Questions (Q22):\n"
+        f"  qwen3-embedding:4b output dimension = [bold]{dim}d[/bold]\n\n"
         f"Use [bold]vector({dim})[/bold] when creating the Supabase table.",
-        title="Embedding Dimension",
+        title="Embedding Dimension Test ✓",
     ))
 
 
