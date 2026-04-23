@@ -10,8 +10,16 @@ from pathlib import Path
 from typing import Optional
 import uuid
 
+import httpx
+
 from ..config import Config
 from ..models.document import IntakeResult
+
+_VIDEO_EXT = {'.mp4', '.mkv', '.avi', '.mov', '.webm', '.m4v', '.flv'}
+_AUDIO_EXT = {'.mp3', '.wav', '.m4a', '.flac', '.ogg', '.aac'}
+_DOC_EXT   = {'.pdf', '.docx', '.doc', '.odt'}
+_EPUB_EXT  = {'.epub'}
+_SRT_EXT   = {'.srt', '.vtt'}
 
 
 def run(
@@ -20,25 +28,84 @@ def run(
     batch: Optional[str],
     config: Config,
 ) -> IntakeResult:
-    raise NotImplementedError
+    doc_id      = _generate_doc_id()
+    source_type = _detect_source_type(source)
+    assigned_tier = tier if tier is not None else _auto_assign_tier(source_type)
+    batch_id    = batch or "unassigned"
+
+    archive_url = None
+    if source_type == "url":
+        archive_url = _archive_url(source, config)
+
+    local_dir = _create_local_dir(doc_id, config)
+
+    return IntakeResult(
+        doc_id=doc_id,
+        source=source,
+        source_type=source_type,
+        declared_type=source_type,
+        tier=assigned_tier,
+        batch_id=batch_id,
+        language=None,
+        archive_url=archive_url,
+        local_dir=local_dir,
+    )
 
 
-def _detect_source_type(source: str):
-    raise NotImplementedError
+def _detect_source_type(source: str) -> str:
+    if source.startswith(("http://", "https://")):
+        return "url"
+    suffix = Path(source).suffix.lower()
+    if suffix in _DOC_EXT:
+        return "pdf"
+    if suffix in _VIDEO_EXT:
+        return "video"
+    if suffix in _AUDIO_EXT:
+        return "audio"
+    if suffix in _EPUB_EXT:
+        return "epub"
+    if suffix in _SRT_EXT:
+        return "srt"
+    if suffix in {".html", ".htm"}:
+        return "html"
+    return "html"
 
 
 def _generate_doc_id() -> str:
     return str(uuid.uuid4())[:8]
 
 
-def _auto_assign_tier(source_type: str, declared_type: str) -> int:
-    raise NotImplementedError
+def _auto_assign_tier(source_type: str) -> int:
+    if source_type in ("video", "audio", "srt"):
+        return 2
+    return 1
 
 
 def _archive_url(url: str, config: Config) -> Optional[str]:
-    """Check Wayback Machine for existing snapshot; save if none found.
-    Returns archive URL or None on failure (never blocks intake on failure)."""
-    raise NotImplementedError
+    """Check Wayback Machine for existing snapshot; request a save if none found.
+    Never blocks intake — returns None on any failure."""
+    try:
+        r = httpx.get(
+            f"https://archive.org/wayback/available?url={url}",
+            timeout=10,
+        )
+        r.raise_for_status()
+        closest = r.json().get("archived_snapshots", {}).get("closest")
+        if closest and closest.get("available"):
+            return closest["url"]
+
+        # Request a fresh save
+        r2 = httpx.get(
+            f"https://web.archive.org/save/{url}",
+            timeout=30,
+            follow_redirects=True,
+        )
+        loc = r2.headers.get("content-location") or r2.headers.get("x-cache-url")
+        if loc:
+            return loc if loc.startswith("http") else f"https://web.archive.org{loc}"
+    except Exception:
+        pass
+    return None
 
 
 def _create_local_dir(doc_id: str, config: Config) -> Path:

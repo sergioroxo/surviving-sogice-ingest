@@ -2,7 +2,7 @@
 Supabase client wrapper.
 
 Handles upserts to the document_embeddings table.
-The vector column dimension must match qwen3-embedding:4b output (Q22).
+The vector column dimension must match qwen3-embedding:4b output (Q22 = 2560d).
 """
 from __future__ import annotations
 
@@ -22,9 +22,21 @@ def upsert_embedding(
     config: Config,
 ) -> None:
     """Insert or update a row in document_embeddings."""
-    raise NotImplementedError
+    client = _client(config)
+    client.table("document_embeddings").upsert({
+        "doc_id":     doc_id,
+        "embedding":  vector,
+        "doc_type":   analysis.type,
+        "scope":      analysis.scope,
+        "country":    analysis.country,
+        "confidence": analysis.confidence.overall_score,
+    }).execute()
 
 
 def insert_null_row(doc_id: str, config: Config) -> None:
     """Create a null-vector placeholder row at intake time (Phase 0-B requirement)."""
-    raise NotImplementedError
+    client = _client(config)
+    client.table("document_embeddings").upsert({
+        "doc_id":    doc_id,
+        "embedding": None,
+    }).execute()

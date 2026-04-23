@@ -70,21 +70,63 @@ def checkpoint_analysis(
 ) -> Optional[AnalysisResult]:
     """Checkpoint 3 — display classification fields, return (possibly edited) result.
     Returns None if researcher aborts."""
-    raise NotImplementedError
+    if yes:
+        return result
+
+    table = Table(show_header=False, box=None, padding=(0, 1))
+    table.add_row("Type:",   result.type)
+    table.add_row("Format:", result.format)
+    table.add_row("Scope:",  result.scope)
+    table.add_row("Confidence:", f"{result.confidence.overall_score:.2f} ({result.confidence.status})")
+    if result.country:
+        table.add_row("Country:", ", ".join(result.country))
+    if result.tactic:
+        table.add_row("Tactics:", ", ".join(result.tactic))
+    if result.actor:
+        table.add_row("Actors:", ", ".join(result.actor[:5]))
+    if result.term:
+        table.add_row("Terms:", ", ".join(result.term))
+    if result.flags:
+        table.add_row("Flags:", ", ".join(result.flags))
+    table.add_row("Testimony flag:", "YES" if result.testimony_flag else "no")
+    table.add_row("Candidate terms:", str(len(result.candidate_terms)))
+    table.add_row("Suggested actors:", str(len(result.suggested_actors)))
+
+    console.print(Panel(table, title=f"[bold]ANALYSIS — {doc_id}[/bold]"))
+    console.print(Panel(result.summary, title="Summary"))
+
+    # Show --llm both comparison if available
+    local = getattr(result, "_local_comparison", None)
+    if local is not None:
+        _show_diff(result, local)
+
+    if result.confidence.reasons:
+        console.print(
+            Panel("\n".join(f"• {r}" for r in result.confidence.reasons),
+                  title="[yellow]Confidence notes[/yellow]")
+        )
+
+    action = typer.prompt(
+        "Action",
+        default="accept",
+        type=typer.Choice(["accept", "edit-json", "abort"]),
+    )
+    if action == "abort":
+        return None
+    if action == "edit-json":
+        return _edit_analysis_json(result, doc_id)
+    return result
 
 
 def checkpoint_upload(doc_id: str, result: AnalysisResult) -> bool:
     """Checkpoint 4 — confirm Sanity + Supabase upload."""
-    candidate_count = len(result.candidate_terms)
-    actor_count = len(result.suggested_actors)
-
     table = Table(show_header=False, box=None, padding=(0, 1))
     table.add_row("Doc ID:", doc_id)
     table.add_row("Type:", result.type)
     table.add_row("Scope:", result.scope)
     table.add_row("Confidence:", f"{result.confidence.overall_score:.2f} ({result.confidence.status})")
-    table.add_row("Candidate terms:", str(candidate_count))
-    table.add_row("Suggested actors:", str(actor_count))
+    table.add_row("Candidate terms:", str(len(result.candidate_terms)))
+    table.add_row("Suggested actors:", str(len(result.suggested_actors)))
 
     will_do = Text()
     will_do.append("• Write to Sanity (workflowStatus: unverified)\n")
@@ -111,6 +153,58 @@ def _quality_badge(quality: str) -> Text:
     return Text(quality, style=colors.get(quality, "white"))
 
 
+def _show_diff(claude: AnalysisResult, local: AnalysisResult) -> None:
+    diff_table = Table(title="Claude vs Local LLM", show_header=True)
+    diff_table.add_column("Field")
+    diff_table.add_column("Claude")
+    diff_table.add_column("Local")
+    for field in ("type", "scope", "narrative_register"):
+        cv = getattr(claude, field)
+        lv = getattr(local, field)
+        style = "" if cv == lv else "yellow"
+        diff_table.add_row(field, str(cv), str(lv), style=style)
+    for field in ("tactic", "country", "actor"):
+        cv = set(getattr(claude, field))
+        lv = set(getattr(local, field))
+        only_c = cv - lv
+        only_l = lv - cv
+        if only_c or only_l:
+            diff_table.add_row(
+                field,
+                f"+{sorted(only_c)}" if only_c else "—",
+                f"+{sorted(only_l)}" if only_l else "—",
+                style="yellow",
+            )
+    diff_table.add_row(
+        "confidence",
+        f"{claude.confidence.overall_score:.2f}",
+        f"{local.confidence.overall_score:.2f}",
+    )
+    console.print(diff_table)
+
+
+def _edit_analysis_json(result: AnalysisResult, doc_id: str) -> Optional[AnalysisResult]:
+    import json, subprocess, os, tempfile
+    data = json.loads(result.model_dump_json(indent=2))
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".json", delete=False, encoding="utf-8"
+    ) as f:
+        json.dump(data, f, indent=2)
+        tmp_path = f.name
+
+    editor = os.environ.get("EDITOR", "nano")
+    subprocess.call([editor, tmp_path])
+
+    try:
+        edited = json.loads(Path(tmp_path).read_text(encoding="utf-8"))
+        return AnalysisResult.model_validate(edited)
+    except Exception as exc:
+        console.print(f"[red]Invalid JSON after edit: {exc}[/red]")
+        return result
+    finally:
+        Path(tmp_path).unlink(missing_ok=True)
+
+
 def _open_in_editor(result: PreprocessResult) -> None:
     import subprocess, os
     if result.markdown:
@@ -119,5 +213,7 @@ def _open_in_editor(result: PreprocessResult) -> None:
         subprocess.call([editor, str(path)])
 
 
-def _markdown_path(result: PreprocessResult):
-    raise NotImplementedError
+def _markdown_path(result: PreprocessResult) -> Path:
+    from ..config import load_config
+    config = load_config()
+    return config.corpus_dir / result.doc_id / "extracted.md"

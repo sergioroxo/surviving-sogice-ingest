@@ -10,6 +10,7 @@ Routing:
 Writes extracted.md and extracted.txt to the local corpus directory.
 """
 from __future__ import annotations
+import re
 from pathlib import Path
 
 from ..config import Config
@@ -21,32 +22,186 @@ TRUNCATION_TAIL  =  6_000
 
 
 def run(intake: IntakeResult, config: Config) -> PreprocessResult:
-    raise NotImplementedError
+    st = intake.source_type
+    if st == "url" or st == "html":
+        result = _preprocess_url(intake.source)
+    elif st == "pdf":
+        result = _preprocess_pdf(Path(intake.source))
+    elif st == "epub":
+        result = _preprocess_pdf(Path(intake.source))  # Docling handles EPUB
+    elif st in ("video", "audio"):
+        result = _preprocess_video(intake.source)
+    elif st == "srt":
+        result = _preprocess_srt(Path(intake.source))
+    else:
+        raise ValueError(f"Unknown source type: {st!r}")
+
+    result.doc_id = intake.doc_id
+    text, truncated = _maybe_truncate(result.text)
+    result.text = text
+    result.truncated = truncated
+    result.char_count = len(result.text)
+
+    if intake.local_dir:
+        _save_artifacts(result, intake.local_dir)
+
+    return result
+
+
+def _preprocess_url(url: str) -> PreprocessResult:
+    try:
+        import trafilatura
+        downloaded = trafilatura.fetch_url(url)
+        if not downloaded:
+            raise ValueError("trafilatura: empty download")
+        text = trafilatura.extract(downloaded) or ""
+        md   = trafilatura.extract(downloaded, output_format="markdown") or text
+        quality = _rate_quality(text, "trafilatura")
+        return PreprocessResult(
+            doc_id="",
+            tool_used="trafilatura",
+            quality=quality,
+            text=text,
+            markdown=md,
+        )
+    except ImportError:
+        raise RuntimeError(
+            "trafilatura is not installed. Run: pip install trafilatura"
+        )
 
 
 def _preprocess_pdf(path: Path) -> PreprocessResult:
     """Docling primary, Unstructured fallback."""
-    raise NotImplementedError
+    try:
+        from docling.document_converter import DocumentConverter
+        converter = DocumentConverter()
+        doc = converter.convert(str(path))
+        md   = doc.document.export_to_markdown()
+        text = doc.document.export_to_text()
+        quality = _rate_quality(text, "docling")
+        return PreprocessResult(
+            doc_id="",
+            tool_used="docling",
+            quality=quality,
+            text=text,
+            markdown=md,
+        )
+    except ImportError:
+        pass
+    except Exception as exc:
+        import sys
+        print(f"[docling error] {exc} — falling back to unstructured", file=sys.stderr)
 
-
-def _preprocess_url(url: str) -> PreprocessResult:
-    """Trafilatura extraction."""
-    raise NotImplementedError
+    # Unstructured fallback
+    try:
+        from unstructured.partition.auto import partition
+        elements = partition(filename=str(path))
+        text = "\n\n".join(str(e) for e in elements)
+        quality = _rate_quality(text, "unstructured")
+        return PreprocessResult(
+            doc_id="",
+            tool_used="unstructured",
+            quality=quality,
+            text=text,
+        )
+    except ImportError:
+        raise RuntimeError(
+            "Neither docling nor unstructured is installed.\n"
+            "Run: pip install docling  (or pip install unstructured)"
+        )
 
 
 def _preprocess_video(source: str) -> PreprocessResult:
     """yt-dlp subtitle extraction; faster-whisper transcription fallback."""
-    raise NotImplementedError
+    import tempfile, os
+
+    # Try yt-dlp subtitles first (fast, no compute)
+    try:
+        import yt_dlp
+        with tempfile.TemporaryDirectory() as tmp:
+            opts = {
+                "writesubtitles": True,
+                "writeautomaticsub": True,
+                "subtitleslangs": ["en", "de", "fr", "nl", "no", "sv", "pt", "es"],
+                "skip_download": True,
+                "outtmpl": os.path.join(tmp, "%(id)s.%(ext)s"),
+                "quiet": True,
+            }
+            with yt_dlp.YoutubeDL(opts) as ydl:
+                ydl.download([source])
+            srt_files = list(Path(tmp).glob("*.vtt")) + list(Path(tmp).glob("*.srt"))
+            if srt_files:
+                text = _strip_srt(srt_files[0].read_text(encoding="utf-8"))
+                if text.strip():
+                    quality = _rate_quality(text, "yt-dlp")
+                    return PreprocessResult(
+                        doc_id="",
+                        tool_used="yt-dlp",
+                        quality=quality,
+                        text=text,
+                    )
+    except ImportError:
+        pass
+    except Exception:
+        pass
+
+    # faster-whisper fallback (local file or downloaded audio)
+    try:
+        from faster_whisper import WhisperModel
+        model = WhisperModel("small", device="cpu", compute_type="int8")
+        segments, info = model.transcribe(source, beam_size=5)
+        text = " ".join(seg.text.strip() for seg in segments)
+        quality = _rate_quality(text, "whisper")
+        return PreprocessResult(
+            doc_id="",
+            tool_used="whisper",
+            quality=quality,
+            text=text,
+            language_detected=info.language,
+        )
+    except ImportError:
+        raise RuntimeError(
+            "Neither yt-dlp nor faster-whisper is installed.\n"
+            "Run: pip install yt-dlp faster-whisper"
+        )
 
 
 def _preprocess_srt(path: Path) -> PreprocessResult:
-    """Strip SRT/VTT timestamps, return clean transcript text."""
-    raise NotImplementedError
+    raw  = path.read_text(encoding="utf-8", errors="replace")
+    text = _strip_srt(raw)
+    quality = _rate_quality(text, "srt")
+    return PreprocessResult(
+        doc_id="",
+        tool_used="srt",
+        quality=quality,
+        text=text,
+    )
+
+
+def _strip_srt(raw: str) -> str:
+    """Remove SRT/VTT sequence numbers, timestamps, and HTML tags."""
+    # VTT header
+    raw = re.sub(r"^WEBVTT.*?\n\n", "", raw, flags=re.DOTALL)
+    # Timestamps: 00:00:00,000 --> 00:00:00,000  or  00:00.000 --> ...
+    raw = re.sub(r"\d+:\d+[\d:,\.]+\s*-->\s*\d+[\d:,\. ]+\n?", "", raw)
+    # Sequence numbers on their own line
+    raw = re.sub(r"^\d+\s*$", "", raw, flags=re.MULTILINE)
+    # VTT cue tags
+    raw = re.sub(r"<[^>]+>", "", raw)
+    # Collapse blank lines
+    raw = re.sub(r"\n{3,}", "\n\n", raw)
+    return raw.strip()
 
 
 def _rate_quality(text: str, tool: str) -> str:
-    """Return 'high' | 'medium' | 'low' | 'blocked' based on char count and heuristics."""
-    raise NotImplementedError
+    n = len(text)
+    if n == 0:
+        return "blocked"
+    if n < 500:
+        return "low"
+    if n < 3000:
+        return "medium"
+    return "high"
 
 
 def _maybe_truncate(text: str) -> tuple[str, bool]:
@@ -59,7 +214,6 @@ def _maybe_truncate(text: str) -> tuple[str, bool]:
 
 
 def _save_artifacts(result: PreprocessResult, doc_dir: Path) -> None:
-    """Write extracted.md and extracted.txt to the document directory."""
     if result.markdown:
         (doc_dir / "extracted.md").write_text(result.markdown, encoding="utf-8")
     (doc_dir / "extracted.txt").write_text(result.text, encoding="utf-8")
