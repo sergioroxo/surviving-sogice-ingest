@@ -36,6 +36,20 @@ def ingest(
     """Full ingestion pipeline: intake → preprocess → embed → classify → review → upload."""
     config = load_config(llm=llm)
 
+    # Deduplication check — warn researcher if this source was already ingested
+    if not yes:
+        existing = intake.find_existing_by_source(source, config)
+        for ex in existing:
+            status_label = "(uploaded to Sanity)" if ex.get("uploaded") else "(local only)"
+            console.print(Panel(
+                f"[yellow]Already ingested as [bold]{ex['doc_id']}[/bold] {status_label}[/yellow]\n"
+                f"Batch: {ex.get('batch_id', '?')}  |  "
+                f"Archive: {ex.get('archive_url') or 'none'}",
+                title="Duplicate source detected",
+            ))
+        if existing and not typer.confirm("Ingest again as a new document?", default=False):
+            raise typer.Exit()
+
     # Stage 1 — Intake
     intake_result = intake.run(source, tier=tier, batch=batch, config=config)
     if not yes and not review.checkpoint_intake(intake_result):

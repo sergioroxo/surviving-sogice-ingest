@@ -6,6 +6,7 @@ checks the Wayback Machine for URL sources, assigns tier and batch,
 creates the local corpus directory.
 """
 from __future__ import annotations
+import json
 from pathlib import Path
 from typing import Optional
 import uuid
@@ -112,3 +113,28 @@ def _create_local_dir(doc_id: str, config: Config) -> Path:
     doc_dir = config.corpus_dir / doc_id
     doc_dir.mkdir(parents=True, exist_ok=True)
     return doc_dir
+
+
+def find_existing_by_source(source: str, config: Config) -> list[dict]:
+    """Return any previously ingested documents with the same source URL/path."""
+    matches: list[dict] = []
+    if not config.corpus_dir.exists():
+        return matches
+    for doc_dir in config.corpus_dir.iterdir():
+        intake_path = doc_dir / "intake.json"
+        if not intake_path.exists():
+            continue
+        try:
+            data = json.loads(intake_path.read_text(encoding="utf-8"))
+            if data.get("source") == source:
+                sanity_path = doc_dir / "sanity_record.json"
+                if sanity_path.exists():
+                    sanity_data = json.loads(sanity_path.read_text(encoding="utf-8"))
+                    data["sanity_id"] = sanity_data.get("sanity_id")
+                    data["uploaded"] = True
+                else:
+                    data["uploaded"] = False
+                matches.append(data)
+        except Exception:
+            pass
+    return matches

@@ -7,7 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal, Optional
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 # ---------------------------------------------------------------------------
@@ -40,6 +40,13 @@ class Confidence(BaseModel):
     status: Literal["high", "medium", "low"] = "low"
     reasons: list[str] = Field(default_factory=list)
     signals: ConfidenceSignals = Field(default_factory=ConfidenceSignals)
+
+    @model_validator(mode="after")
+    def derive_score_from_status(self) -> "Confidence":
+        _defaults = {"high": 0.90, "medium": 0.75, "low": 0.50}
+        if self.overall_score == 0.0:
+            self.overall_score = _defaults[self.status]
+        return self
 
 
 class LowConfidenceReason(BaseModel):

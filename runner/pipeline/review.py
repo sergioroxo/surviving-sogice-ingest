@@ -226,10 +226,23 @@ def _edit_analysis_json(result: AnalysisResult, doc_id: str) -> Optional[Analysi
     subprocess.call([editor, tmp_path])
 
     try:
-        edited = json.loads(Path(tmp_path).read_text(encoding="utf-8"))
+        text = Path(tmp_path).read_text(encoding="utf-8").strip()
+        if not text:
+            console.print("[yellow]File was empty — no changes made.[/yellow]")
+            retry = typer.confirm("Open editor again?", default=True)
+            if retry:
+                return _edit_analysis_json(result, doc_id)
+            return result
+        edited = json.loads(text)
         return AnalysisResult.model_validate(edited)
+    except json.JSONDecodeError as exc:
+        console.print(f"[red]Invalid JSON: {exc}[/red]")
+        retry = typer.confirm("Retry editing?", default=True)
+        if retry:
+            return _edit_analysis_json(result, doc_id)
+        return result
     except Exception as exc:
-        console.print(f"[red]Invalid JSON after edit: {exc}[/red]")
+        console.print(f"[red]Validation error: {exc}[/red]")
         return result
     finally:
         Path(tmp_path).unlink(missing_ok=True)
