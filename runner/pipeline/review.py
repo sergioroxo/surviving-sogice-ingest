@@ -55,6 +55,26 @@ def checkpoint_preprocess(result: PreprocessResult) -> bool:
         table.add_row("Date published:", result.date_published)
     if result.outbound_links:
         table.add_row("Outbound links:", str(len(result.outbound_links)))
+    intel = result.page_intel
+    if intel:
+        if intel.document_links:
+            doc_summary = ", ".join(
+                f"{d['file_type'].upper()}: {d['anchor_text'][:40] or d['url']}"
+                for d in intel.document_links[:4]
+            )
+            table.add_row("Linked documents:", doc_summary)
+        if intel.social_profiles:
+            profiles = ", ".join(
+                f"{p['platform']}{'/' + p['handle'] if p.get('handle') else ''}"
+                for p in intel.social_profiles
+            )
+            table.add_row("Social profiles:", profiles)
+        if intel.media_embeds:
+            table.add_row("Embedded media:", ", ".join(
+                f"{e['platform']}:{e['id']}" for e in intel.media_embeds[:4]
+            ))
+        if intel.emails:
+            table.add_row("Emails found:", ", ".join(intel.emails[:3]))
     if result.language_detected:
         table.add_row("Language detected:", result.language_detected)
     if result.ocr_images:

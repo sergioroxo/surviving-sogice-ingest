@@ -163,17 +163,7 @@ def _build_sanity_document(pkg: DocumentPackage) -> dict:
             "resolution":      "not_applicable",
         },
 
-        "referencedUrls": [
-            {
-                "_key":       f"link-{i}",
-                "url":        lnk["url"],
-                "anchorText": lnk.get("anchor_text", ""),
-                "domain":     lnk.get("domain", ""),
-                "linkType":   "outbound",
-                "resolved":   False,
-            }
-            for i, lnk in enumerate(prep.outbound_links[:50])
-        ],
+        "referencedUrls": _build_referenced_urls(prep),
 
         "testimonyFlag": analysis.testimony_flag,
         "needsReview":   analysis.needs_review,
@@ -187,6 +177,45 @@ def _build_sanity_document(pkg: DocumentPackage) -> dict:
         doc["content"]["languageDetected"] = prep.language_detected
 
     return doc
+
+
+def _build_referenced_urls(prep) -> list[dict]:
+    """Merge outbound links + document links into the referencedUrls Sanity array.
+    Document links are flagged with linkType='source' so they can be queued
+    for future ingestion."""
+    entries: list[dict] = []
+    seen: set[str] = set()
+
+    def _add(url: str, anchor: str, domain: str, link_type: str) -> None:
+        if url in seen or not url:
+            return
+        seen.add(url)
+        entries.append({
+            "_key":       f"url-{len(entries)}",
+            "url":        url,
+            "anchorText": anchor[:200],
+            "domain":     domain,
+            "linkType":   link_type,
+            "resolved":   False,
+        })
+
+    intel = prep.page_intel
+    if intel:
+        # Document links first — highest research priority
+        for d in intel.document_links:
+            _add(d["url"], d.get("anchor_text", ""), d.get("domain", ""), "source")
+        # Social media profiles
+        for p in intel.social_profiles:
+            _add(p["url"], p.get("platform", ""), p.get("domain", p.get("platform", "")), "related")
+        # Embedded media
+        for e in intel.media_embeds:
+            _add(e["url"], e.get("title", e["platform"]), e["platform"], "related")
+
+    # Outbound links (up to 40)
+    for lnk in prep.outbound_links[:40]:
+        _add(lnk["url"], lnk.get("anchor_text", ""), lnk.get("domain", ""), "outbound")
+
+    return entries
 
 
 def _mutate(mutations: list[dict], config: Config) -> dict:

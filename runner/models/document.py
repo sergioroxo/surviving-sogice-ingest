@@ -151,6 +151,51 @@ class AnalysisResult(BaseModel):
 # ---------------------------------------------------------------------------
 
 @dataclass
+class PageIntelligence:
+    """Rich web-page intelligence extracted at preprocessing time.
+    All fields are optional — populated only when the source is a URL."""
+
+    # Canonical / deduplication
+    canonical_url: str = ""
+
+    # Open Graph / social card metadata (often richer than page content)
+    og_title: str = ""
+    og_description: str = ""
+    og_image: str = ""
+    og_type: str = ""                       # article | website | video | ...
+
+    # CMS taxonomy
+    tags: list[str] = field(default_factory=list)
+    categories: list[str] = field(default_factory=list)
+    keywords: list[str] = field(default_factory=list)
+
+    # Author enrichment
+    author_url: str = ""                    # link to author profile page
+
+    # Social media profiles found on the page (header/footer/share buttons)
+    social_profiles: list[dict] = field(default_factory=list)
+    # [{platform: "twitter", url: "https://twitter.com/CConcern", handle: "CConcern"}]
+
+    # Document/file links — future ingestion queue
+    document_links: list[dict] = field(default_factory=list)
+    # [{url, file_type: "pdf"|"docx"|"pptx"..., anchor_text, domain}]
+
+    # Embedded media — future ingestion queue
+    media_embeds: list[dict] = field(default_factory=list)
+    # [{platform: "youtube"|"vimeo"|"rumble", id, url, title?}]
+
+    # Contact / org identity signals
+    emails: list[str] = field(default_factory=list)
+
+    # JSON-LD structured data (Schema.org) — raw parsed objects
+    json_ld: list[dict] = field(default_factory=list)
+
+    # Internal links (same domain) — topical signature of the organisation
+    internal_links: list[dict] = field(default_factory=list)
+    # [{url, anchor_text}] — top 30
+
+
+@dataclass
 class IntakeResult:
     doc_id: str
     source: str                            # original URL or file path string
@@ -181,7 +226,8 @@ class PreprocessResult:
     sitename: str = ""                     # publisher / organisation name as found on the page
     description: str = ""                  # meta description or lede
     hostname: str = ""                     # bare domain, e.g. christianconcern.com
-    outbound_links: list[dict] = field(default_factory=list)  # [{url, anchor_text, domain}]
+    outbound_links: list[dict] = field(default_factory=list)   # [{url, anchor_text, domain}]
+    page_intel: Optional["PageIntelligence"] = None
 
 
 @dataclass

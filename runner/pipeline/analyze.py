@@ -185,12 +185,50 @@ def _build_user_message(preprocess: PreprocessResult) -> str:
         lines.append(f"DATE PUBLISHED: {preprocess.date_published}")
     if preprocess.description:
         lines.append(f"PAGE DESCRIPTION: {preprocess.description}")
-    if preprocess.outbound_links:
-        # Give the LLM the first 20 outbound domains for network context
-        domains = list(dict.fromkeys(
-            lnk["domain"] for lnk in preprocess.outbound_links if lnk["domain"]
-        ))[:20]
-        lines.append(f"OUTBOUND DOMAINS ({len(preprocess.outbound_links)} links total): {', '.join(domains)}")
+
+    intel = preprocess.page_intel
+    if intel:
+        if intel.categories:
+            lines.append(f"SITE CATEGORIES: {', '.join(intel.categories)}")
+        if intel.tags:
+            lines.append(f"SITE TAGS / TOPICS: {', '.join(intel.tags[:15])}")
+        if intel.keywords:
+            lines.append(f"META KEYWORDS: {', '.join(intel.keywords[:10])}")
+        if intel.social_profiles:
+            profiles = ", ".join(
+                f"{p['platform']}:{p['handle']}" if p.get("handle") else p["platform"]
+                for p in intel.social_profiles
+            )
+            lines.append(f"SOCIAL MEDIA PROFILES ON PAGE: {profiles}")
+        if intel.document_links:
+            doc_lines = "; ".join(
+                f"{d['file_type'].upper()}: \"{d['anchor_text']}\" → {d['url']}"
+                for d in intel.document_links[:8]
+            )
+            lines.append(f"LINKED DOCUMENTS ({len(intel.document_links)} total): {doc_lines}")
+        if intel.media_embeds:
+            embeds = "; ".join(
+                f"{e['platform']} id={e['id']} title=\"{e.get('title','')}\""
+                for e in intel.media_embeds[:5]
+            )
+            lines.append(f"EMBEDDED MEDIA: {embeds}")
+        if intel.emails:
+            lines.append(f"CONTACT EMAILS ON PAGE: {', '.join(intel.emails[:5])}")
+        if intel.json_ld:
+            # Summarise org/person/event JSON-LD for the LLM
+            for obj in intel.json_ld[:3]:
+                if isinstance(obj, dict):
+                    t = obj.get("@type", "")
+                    name = obj.get("name", "")
+                    if t and name:
+                        lines.append(f"STRUCTURED DATA ({t}): {name}")
+        if preprocess.outbound_links:
+            domains = list(dict.fromkeys(
+                lnk["domain"] for lnk in preprocess.outbound_links if lnk["domain"]
+            ))[:20]
+            lines.append(
+                f"OUTBOUND DOMAINS ({len(preprocess.outbound_links)} links): {', '.join(domains)}"
+            )
 
     return "\n".join(lines) + "\n\n---\n\nDOCUMENT TEXT:\n" + preprocess.text
 
