@@ -11,6 +11,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
+import click
 import typer
 
 from ..models.document import AnalysisResult, IntakeResult, PreprocessResult
@@ -53,7 +54,7 @@ def checkpoint_preprocess(result: PreprocessResult) -> bool:
         "Action",
         default="proceed",
         show_choices=True,
-        type=typer.Choice(["proceed", "edit", "abort"]),
+        type=click.Choice(["proceed", "edit", "abort"]),
     )
     if action == "abort":
         return False
@@ -109,7 +110,7 @@ def checkpoint_analysis(
     action = typer.prompt(
         "Action",
         default="accept",
-        type=typer.Choice(["accept", "edit-json", "abort"]),
+        type=click.Choice(["accept", "edit-json", "abort"]),
     )
     if action == "abort":
         return None
@@ -139,7 +140,7 @@ def checkpoint_upload(doc_id: str, result: AnalysisResult) -> bool:
     action = typer.prompt(
         "Action",
         default="upload",
-        type=typer.Choice(["upload", "local-only", "review-again", "abort"]),
+        type=click.Choice(["upload", "local-only", "review-again", "abort"]),
     )
     return action == "upload"
 
