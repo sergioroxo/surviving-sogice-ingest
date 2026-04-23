@@ -20,10 +20,7 @@ export default {
       name: 'actorsInvolved',
       title: 'Actors Involved',
       type: 'array',
-      of: [
-        { type: 'reference', to: [{ type: 'person' }] },
-        { type: 'reference', to: [{ type: 'organization' }] },
-      ],
+      of: [{ type: 'reference', to: [{ type: 'person' }, { type: 'organization' }] }],
     },
     { name: 'description', type: 'text', rows: 5 },
     {
@@ -34,7 +31,7 @@ export default {
     {
       name: 'sourceDocuments',
       type: 'array',
-      of: [{ type: 'reference', to: [{ type: 'document' }] }],
+      of: [{ type: 'reference', to: [{ type: 'sogiceDocument' }] }],
     },
     {
       name: 'registryStatus',

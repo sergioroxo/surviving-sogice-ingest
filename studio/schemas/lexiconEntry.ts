@@ -96,10 +96,7 @@ export default {
       name: 'actorsUsing',
       title: 'Actors Using This Term',
       type: 'array',
-      of: [
-        { type: 'reference', to: [{ type: 'person' }] },
-        { type: 'reference', to: [{ type: 'organization' }] },
-      ],
+      of: [{ type: 'reference', to: [{ type: 'person' }, { type: 'organization' }] }],
     },
     { name: 'firstSeen', type: 'datetime' },
     { name: 'lastSeen', type: 'datetime' },

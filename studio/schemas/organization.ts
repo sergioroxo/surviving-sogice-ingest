@@ -48,7 +48,7 @@ export default {
     {
       name: 'sourceDocuments',
       type: 'array',
-      of: [{ type: 'reference', to: [{ type: 'document' }] }],
+      of: [{ type: 'reference', to: [{ type: 'sogiceDocument' }] }],
     },
     {
       name: 'registryStatus',
