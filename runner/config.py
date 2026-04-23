@@ -63,8 +63,8 @@ def load_config(llm: str = "claude") -> Config:
             "Copy runner/.env.example to runner/.env and fill in your keys."
         )
 
-    corpus_dir = Path(os.getenv("CORPUS_DIR", "~/survivingsogice/corpus")).expanduser()
-    exports_dir = Path(os.getenv("EXPORTS_DIR", "~/survivingsogice/exports")).expanduser()
+    corpus_dir = Path(os.getenv("CORPUS_DIR", "~/Documents/surviving-sogice-corpus")).expanduser()
+    exports_dir = Path(os.getenv("EXPORTS_DIR", "~/Documents/surviving-sogice-exports")).expanduser()
     corpus_dir.mkdir(parents=True, exist_ok=True)
     exports_dir.mkdir(parents=True, exist_ok=True)
 
