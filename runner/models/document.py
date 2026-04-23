@@ -7,7 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # ---------------------------------------------------------------------------
@@ -60,25 +60,25 @@ class FieldConfidence(BaseModel):
 
 class CandidateTerm(BaseModel):
     term: str
-    language: str
-    proposed_category: str
+    language: str = "unknown"
+    proposed_category: str = ""
     promotional_use: bool = True
-    draft_definition: str
-    context_quote: str
+    draft_definition: str = ""
+    context_quote: str = ""
 
 
 class SuggestedActor(BaseModel):
     name: str
-    type: Literal["person", "organization"]
-    country: str
-    role: str
-    evidence_quote: str
+    type: Literal["person", "organization"] = "organization"
+    country: str = ""
+    role: str = ""
+    evidence_quote: str = ""
 
 
 class SuggestedNetwork(BaseModel):
     name: str
-    description: str
-    evidence_quote: str
+    description: str = ""
+    evidence_quote: str = ""
 
 
 class ExtractableAsset(BaseModel):
@@ -86,9 +86,9 @@ class ExtractableAsset(BaseModel):
         "prayer_script", "testimony_excerpt", "conversion_script",
         "course_structure", "statistical_claim", "network_connection",
         "terminology_coinage", "visual_asset", "legislative_quote", "counter_sermon",
-    ]
-    content: str
-    target_module: str
+    ] = "statistical_claim"
+    content: str = ""
+    target_module: str = ""
     extracted_by: str = "llm_primary"
 
 
@@ -115,6 +115,8 @@ Scope = Literal["Core", "Contextual", "Reference"]
 
 class AnalysisResult(BaseModel):
     """Exact mirror of the ingestion-v3.1 JSON output schema."""
+    model_config = ConfigDict(extra="ignore")
+
     type: DocumentType
     format: DocumentFormat
     evidence: list[str]
