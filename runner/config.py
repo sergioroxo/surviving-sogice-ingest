@@ -36,12 +36,9 @@ class Config:
         return f"https://{self.sanity_project_id}.api.sanity.io/v2024-01-01/data/mutate/{self.sanity_dataset}"
 
 
-def load_config(llm: str = "claude") -> Config:
-    """Load config. Keys required depend on which LLM will be used:
-    - local / prefer-local: only Ollama keys needed (no ANTHROPIC_API_KEY)
-    - claude / prefer-claude / both: ANTHROPIC_API_KEY required
-    Upload always requires SANITY and SUPABASE keys, but those are validated
-    at upload time, not at startup, so researchers can test locally first."""
+def load_config(llm: str | None = None) -> Config:
+    """Load config. Only validates LLM-specific keys when llm is set.
+    upload-doc / status / export never need an LLM key — pass llm=None."""
 
     always_required = ["SANITY_PROJECT_ID", "SANITY_DATASET",
                        "SANITY_WRITE_TOKEN", "SUPABASE_URL", "SUPABASE_SERVICE_KEY"]
