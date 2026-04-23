@@ -27,7 +27,7 @@ console = Console()
 @app.command()
 def ingest(
     source: str = typer.Argument(..., help="URL, PDF path, video file, SRT, or EPUB"),
-    llm: str = typer.Option("claude", help="LLM: claude | local | both | prefer-local | prefer-claude"),
+    llm: str = typer.Option("claude", help="LLM: claude | local | openrouter | both | prefer-local | prefer-claude"),
     tier: Optional[int] = typer.Option(None, help="Override auto-assigned tier (1|2|3)"),
     batch: Optional[str] = typer.Option(None, help="Assign to existing batch ID"),
     max_chars: Optional[int] = typer.Option(None, "--max-chars", help="Truncation limit in characters (overrides .env). Use 0 for no truncation."),

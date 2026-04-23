@@ -7,7 +7,8 @@ response with Pydantic, and writes analysis.json to the local corpus directory.
 LLM routing (controlled by --llm flag):
   claude        → Anthropic API only
   local         → Ollama (gemma4:e4b by default)
-  both          → run both, return tuple; review.py shows diff at Checkpoint 3
+  openrouter    → OpenRouter API (set OPENROUTER_MODEL in .env)
+  both          → run both Claude + local, review.py shows diff at Checkpoint 3
   prefer-local  → Ollama first, Claude fallback on low confidence or error
   prefer-claude → Claude first, Ollama fallback on API failure
 """
@@ -52,6 +53,8 @@ def run(
         return _analyze_with_claude(preprocess, config)
     if llm == "local":
         return _analyze_with_ollama(preprocess, config)
+    if llm == "openrouter":
+        return _analyze_with_openrouter(preprocess, config)
     if llm == "both":
         claude_result = _analyze_with_claude(preprocess, config)
         local_result  = _analyze_with_ollama(preprocess, config)
@@ -108,6 +111,39 @@ def _analyze_with_ollama(preprocess: PreprocessResult, config: Config) -> Analys
     )
     response.raise_for_status()
     raw_json = response.json()["message"]["content"]
+    return _validate_response(raw_json)
+
+
+def _analyze_with_openrouter(preprocess: PreprocessResult, config: Config) -> AnalysisResult:
+    import httpx
+    if not config.openrouter_api_key:
+        raise EnvironmentError(
+            "OPENROUTER_API_KEY is not set in runner/.env\n"
+            "Get a free key at https://openrouter.ai — no credit card required."
+        )
+    system_prompt = _build_system_prompt_with_lexicon(config)
+    user_message  = _build_user_message(preprocess)
+
+    response = httpx.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {config.openrouter_api_key}",
+            "HTTP-Referer":  "https://github.com/sergioroxo/surviving-sogice-ingest",
+            "X-Title":       "SurvivingSOGICE",
+            "Content-Type":  "application/json",
+        },
+        json={
+            "model": config.openrouter_model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user",   "content": user_message},
+            ],
+            "temperature": 0.1,
+        },
+        timeout=300,
+    )
+    response.raise_for_status()
+    raw_json = response.json()["choices"][0]["message"]["content"]
     return _validate_response(raw_json)
 
 
