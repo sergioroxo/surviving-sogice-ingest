@@ -1,0 +1,92 @@
+export default {
+  name: 'testimony',
+  title: 'Testimony',
+  type: 'document',
+  fields: [
+    {
+      name: 'sourceDocument',
+      title: 'Source Document',
+      type: 'reference',
+      to: [{ type: 'document' }],
+    },
+    { name: 'sourceLocation', title: 'Source Location (page, timestamp, URL section)', type: 'string' },
+    {
+      name: 'testimonyType',
+      title: 'Testimony Type',
+      type: 'string',
+      options: { list: ['survivor', 'ex-gay', 'detrans', 'pastoral_account', 'other'] },
+    },
+    {
+      name: 'consentStatus',
+      title: 'Consent Status',
+      type: 'string',
+      options: { list: ['confirmed', 'unclear', 'withdrawn'] },
+      initialValue: 'unclear',
+    },
+    {
+      name: 'publicDisplay',
+      title: 'Public Display',
+      type: 'boolean',
+      initialValue: false,
+      description: 'Only set true after consent review. Unclear consent = never public.',
+    },
+    {
+      name: 'publicExcerpt',
+      title: 'Public Excerpt (max 200 words)',
+      type: 'text',
+      rows: 6,
+      description: 'Researcher-written excerpt shown publicly even when full testimony is withheld. Required before any public display.',
+    },
+    { name: 'countryOfExperience', title: 'Country of Experience (ISO 3166-1)', type: 'string' },
+    { name: 'denomination', title: 'Religious Denomination (if applicable)', type: 'string' },
+    {
+      name: 'practicesDescribed',
+      title: 'Practices Described',
+      type: 'array',
+      of: [{ type: 'string' }],
+      description: 'Use Practice vocabulary from SOGICE_Ontology_v3.0 Part VI',
+    },
+    { name: 'period', title: 'Period of Experience (approximate)', type: 'string' },
+    {
+      name: 'historicalPeriod',
+      title: 'Historical Period',
+      type: 'string',
+      options: { list: ['pre-1990', '1990s', '2000s', '2010s', '2020s', 'ongoing'] },
+    },
+    { name: 'extractedText', title: 'Extracted Testimony Text', type: 'text', rows: 15 },
+    {
+      name: 'narrativeModuleFlag',
+      title: 'Flag for Narrative Module',
+      type: 'boolean',
+      initialValue: false,
+      description: 'True if this testimony should feed the experience layer.',
+    },
+    {
+      name: 'tier',
+      title: 'Trust Tier',
+      type: 'string',
+      options: { list: ['2', '3'] },
+      initialValue: '2',
+      description: 'Testimony defaults to Tier 2. Tier 3 requires explicit consent review.',
+    },
+    {
+      name: 'aiMetadata',
+      title: 'AI Metadata',
+      type: 'object',
+      fields: [
+        { name: 'primaryModel', type: 'string' },
+        { name: 'primaryProvider', type: 'string' },
+        {
+          name: 'extractedBy',
+          type: 'string',
+          options: { list: ['llm_primary', 'llm_validation', 'human'] },
+        },
+        { name: 'processingDate', type: 'datetime' },
+      ],
+    },
+  ],
+
+  preview: {
+    select: { title: 'testimonyType', subtitle: 'consentStatus' },
+  },
+}
