@@ -415,6 +415,7 @@ def _extract_page_intelligence(html: str, base_url: str) -> "PageIntelligence":
         emails=emails,
         json_ld=json_ld,
         internal_links=internal_links,
+        outbound_links=outbound_links,
     )
 
 

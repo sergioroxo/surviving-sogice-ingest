@@ -5,6 +5,7 @@ All four checkpoints use Rich panels for display and typer.confirm / Prompt
 for researcher input. Each returns True to proceed, False to abort/defer.
 """
 from __future__ import annotations
+from pathlib import Path
 from typing import Optional
 
 from rich.console import Console

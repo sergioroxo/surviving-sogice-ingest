@@ -194,6 +194,10 @@ class PageIntelligence:
     internal_links: list[dict] = field(default_factory=list)
     # [{url, anchor_text}] — top 30
 
+    # Outbound links (external domains)
+    outbound_links: list[dict] = field(default_factory=list)
+    # [{url, anchor_text, domain}] — top 80
+
 
 @dataclass
 class IntakeResult:
