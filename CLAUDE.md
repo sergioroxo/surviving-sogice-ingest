@@ -48,9 +48,9 @@ Use `vector(2560)` in Supabase. Verified with `python -m runner embed-test`.
 ## Build Checklist
 
 ### Phase 0-A — Sanity Schema
-- [ ] Create Sanity project (EU/Norwegian region)
-- [ ] Implement all 12 content types from `SANITY_SCHEMA_v1.0.md`
-- [ ] Add `accessibleDefinition` field to `lexiconEntry` type
+- [x] Create Sanity project (EU/Norwegian region) — project ID `eqg5bxk6`, dataset `production`
+- [x] Implement all 12 content types from `SANITY_SCHEMA_v1.0.md`
+- [x] Add `accessibleDefinition` field to `lexiconEntry` type
 - [ ] Configure researcher + intern roles
 - [ ] Seed persons and organizations from `Entity_Registry_v1.1.md` (~15 persons, ~50 orgs)
 - [ ] Seed laws and events (~12 laws, ~10 events)
