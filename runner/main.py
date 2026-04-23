@@ -34,7 +34,7 @@ def ingest(
     yes: bool = typer.Option(False, "--yes", "-y", help="Auto-approve all checkpoints (no interactive prompts)"),
 ):
     """Full ingestion pipeline: intake → preprocess → embed → classify → review → upload."""
-    config = load_config()
+    config = load_config(llm=llm)
 
     # Stage 1 — Intake
     intake_result = intake.run(source, tier=tier, batch=batch, config=config)
@@ -42,8 +42,13 @@ def ingest(
         raise typer.Exit()
 
     # Stage 2 — Preprocessing
-    # max_chars=0 means no truncation; None means use config/env default
-    effective_max = None if max_chars is None else (None if max_chars == 0 else max_chars)
+    # max_chars=0 means no truncation; None means pick from config by LLM mode
+    if max_chars is not None:
+        effective_max = None if max_chars == 0 else max_chars
+    elif llm in ("local", "prefer-local"):
+        effective_max = config.truncation_limit_local
+    else:
+        effective_max = config.truncation_limit
     preprocess_result = preprocess.run(intake_result, config=config, max_chars=effective_max)
     if not yes and not review.checkpoint_preprocess(preprocess_result):
         raise typer.Exit()

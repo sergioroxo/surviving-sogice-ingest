@@ -34,13 +34,24 @@ class Config:
         return f"https://{self.sanity_project_id}.api.sanity.io/v2024-01-01/data/mutate/{self.sanity_dataset}"
 
 
-def load_config() -> Config:
+def load_config(llm: str = "claude") -> Config:
+    """Load config. Keys required depend on which LLM will be used:
+    - local / prefer-local: only Ollama keys needed (no ANTHROPIC_API_KEY)
+    - claude / prefer-claude / both: ANTHROPIC_API_KEY required
+    Upload always requires SANITY and SUPABASE keys, but those are validated
+    at upload time, not at startup, so researchers can test locally first."""
+
+    always_required = ["SANITY_PROJECT_ID", "SANITY_DATASET",
+                       "SANITY_WRITE_TOKEN", "SUPABASE_URL", "SUPABASE_SERVICE_KEY"]
+    needs_claude = llm in ("claude", "prefer-claude", "both")
+
     missing = []
-    required = ["ANTHROPIC_API_KEY", "SANITY_PROJECT_ID", "SANITY_DATASET",
-                 "SANITY_WRITE_TOKEN", "SUPABASE_URL", "SUPABASE_SERVICE_KEY"]
-    for key in required:
+    for key in always_required:
         if not os.getenv(key):
             missing.append(key)
+    if needs_claude and not os.getenv("ANTHROPIC_API_KEY"):
+        missing.append("ANTHROPIC_API_KEY")
+
     if missing:
         raise EnvironmentError(
             f"Missing required environment variables: {', '.join(missing)}\n"
@@ -53,7 +64,7 @@ def load_config() -> Config:
     exports_dir.mkdir(parents=True, exist_ok=True)
 
     return Config(
-        anthropic_api_key=os.environ["ANTHROPIC_API_KEY"],
+        anthropic_api_key=os.getenv("ANTHROPIC_API_KEY", ""),
         sanity_project_id=os.environ["SANITY_PROJECT_ID"],
         sanity_dataset=os.environ["SANITY_DATASET"],
         sanity_write_token=os.environ["SANITY_WRITE_TOKEN"],
