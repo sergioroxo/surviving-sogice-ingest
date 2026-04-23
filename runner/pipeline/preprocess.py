@@ -16,12 +16,13 @@ from pathlib import Path
 from ..config import Config
 from ..models.document import IntakeResult, PreprocessResult
 
-TRUNCATION_LIMIT = 24_000
-TRUNCATION_HEAD  = 16_000
-TRUNCATION_TAIL  =  6_000
+# Fallback constants — overridden by config or --max-chars CLI flag
+_DEFAULT_LIMIT = 24_000
+_HEAD_RATIO    = 0.67   # 2/3 of limit from the front
+_TAIL_RATIO    = 0.25   # 1/4 of limit from the end
 
 
-def run(intake: IntakeResult, config: Config) -> PreprocessResult:
+def run(intake: IntakeResult, config: Config, max_chars: int | None = None) -> PreprocessResult:
     st = intake.source_type
     if st == "url" or st == "html":
         result = _preprocess_url(intake.source)
@@ -37,7 +38,10 @@ def run(intake: IntakeResult, config: Config) -> PreprocessResult:
         raise ValueError(f"Unknown source type: {st!r}")
 
     result.doc_id = intake.doc_id
-    text, truncated = _maybe_truncate(result.text)
+
+    # Determine effective limit: CLI flag > env var > default
+    limit = max_chars if max_chars is not None else config.truncation_limit
+    text, truncated = _maybe_truncate(result.text, limit)
     result.text = text
     result.truncated = truncated
     result.char_count = len(result.text)
@@ -204,12 +208,14 @@ def _rate_quality(text: str, tool: str) -> str:
     return "high"
 
 
-def _maybe_truncate(text: str) -> tuple[str, bool]:
-    if len(text) <= TRUNCATION_LIMIT:
+def _maybe_truncate(text: str, limit: int = _DEFAULT_LIMIT) -> tuple[str, bool]:
+    if len(text) <= limit:
         return text, False
-    head = text[:TRUNCATION_HEAD]
-    tail = text[-TRUNCATION_TAIL:]
-    truncated = f"{head}\n\n[TRUNCATED — {len(text)} total chars]\n\n{tail}"
+    head_size = int(limit * _HEAD_RATIO)
+    tail_size = int(limit * _TAIL_RATIO)
+    head = text[:head_size]
+    tail = text[-tail_size:]
+    truncated = f"{head}\n\n[TRUNCATED — {len(text)} total chars, showing first {head_size} + last {tail_size}]\n\n{tail}"
     return truncated, True
 
 

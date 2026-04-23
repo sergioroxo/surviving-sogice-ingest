@@ -23,6 +23,12 @@ class Config:
     local_analysis_model: str
     claude_model: str
 
+    # Truncation limits (chars). Claude default is conservative due to API cost.
+    # Local models have large context windows so LOCAL_TRUNCATION_LIMIT can be
+    # set much higher (e.g. 200000) for full SRT / book ingestion.
+    truncation_limit: int
+    truncation_limit_local: int
+
     @property
     def sanity_api_base(self) -> str:
         return f"https://{self.sanity_project_id}.api.sanity.io/v2024-01-01/data/mutate/{self.sanity_dataset}"
@@ -59,4 +65,6 @@ def load_config() -> Config:
         embedding_model=os.getenv("EMBEDDING_MODEL", "qwen3-embedding:4b"),
         local_analysis_model=os.getenv("LOCAL_ANALYSIS_MODEL", "gemma4:e4b"),
         claude_model=os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6"),
+        truncation_limit=int(os.getenv("TRUNCATION_LIMIT", "24000")),
+        truncation_limit_local=int(os.getenv("TRUNCATION_LIMIT_LOCAL", "120000")),
     )
