@@ -1,5 +1,5 @@
 export default {
-  name: 'document',
+  name: 'sogiceDocument',
   title: 'Document',
   type: 'document',
   fields: [

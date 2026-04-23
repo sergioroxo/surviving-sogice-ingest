@@ -7,7 +7,7 @@ export default {
       name: 'sourceDocument',
       title: 'Source Document',
       type: 'reference',
-      to: [{ type: 'document' }],
+      to: [{ type: 'sogiceDocument' }],
     },
     { name: 'sourceLocation', title: 'Source Location (page, timestamp, URL section)', type: 'string' },
     {

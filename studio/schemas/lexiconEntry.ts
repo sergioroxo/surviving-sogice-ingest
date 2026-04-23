@@ -58,7 +58,7 @@ export default {
       name: 'approvedFromDocument',
       title: 'Approved From Document',
       type: 'reference',
-      to: [{ type: 'document' }],
+      to: [{ type: 'sogiceDocument' }],
     },
 
     // ── Evidence Dossier ────────────────────────────────────────
@@ -69,7 +69,7 @@ export default {
       of: [{
         type: 'object',
         fields: [
-          { name: 'documentRef', title: 'Document', type: 'reference', to: [{ type: 'document' }] },
+          { name: 'documentRef', title: 'Document', type: 'reference', to: [{ type: 'sogiceDocument' }] },
           { name: 'excerpt', title: 'Excerpt (under 15 words)', type: 'string' },
           { name: 'language', title: 'Language (ISO 639-1)', type: 'string' },
           {

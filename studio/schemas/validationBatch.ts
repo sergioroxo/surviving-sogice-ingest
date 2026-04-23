@@ -23,13 +23,13 @@ export default {
       name: 'documentsIncluded',
       title: 'Documents Included',
       type: 'array',
-      of: [{ type: 'reference', to: [{ type: 'document' }] }],
+      of: [{ type: 'reference', to: [{ type: 'sogiceDocument' }] }],
     },
     {
       name: 'manualTriggerDocuments',
       title: 'Manually Triggered Documents',
       type: 'array',
-      of: [{ type: 'reference', to: [{ type: 'document' }] }],
+      of: [{ type: 'reference', to: [{ type: 'sogiceDocument' }] }],
     },
     {
       name: 'status',
