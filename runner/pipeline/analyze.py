@@ -168,16 +168,31 @@ def _build_system_prompt_with_lexicon(config: Config) -> str:
 
 
 def _build_user_message(preprocess: PreprocessResult) -> str:
-    return (
-        f"DOCUMENT ID: {preprocess.doc_id}\n"
-        f"SOURCE URL: \n"
-        f"DOCUMENT TYPE (declared at submission): {preprocess.tool_used}\n"
-        f"PREPROCESSING QUALITY: {preprocess.quality}\n"
-        f"LANGUAGE (if known): {preprocess.language_detected or 'unknown'}\n"
-        f"INGESTION BATCH: \n"
-        f"\n---\n\n"
-        f"DOCUMENT TEXT:\n{preprocess.text}"
-    )
+    lines = [
+        f"DOCUMENT ID: {preprocess.doc_id}",
+        f"PREPROCESSING QUALITY: {preprocess.quality}",
+        f"LANGUAGE (if known): {preprocess.language_detected or 'unknown'}",
+    ]
+    if preprocess.title:
+        lines.append(f"TITLE: {preprocess.title}")
+    if preprocess.sitename:
+        lines.append(f"PUBLISHER / SITE NAME: {preprocess.sitename}")
+    if preprocess.hostname:
+        lines.append(f"DOMAIN: {preprocess.hostname}")
+    if preprocess.author:
+        lines.append(f"AUTHOR: {preprocess.author}")
+    if preprocess.date_published:
+        lines.append(f"DATE PUBLISHED: {preprocess.date_published}")
+    if preprocess.description:
+        lines.append(f"PAGE DESCRIPTION: {preprocess.description}")
+    if preprocess.outbound_links:
+        # Give the LLM the first 20 outbound domains for network context
+        domains = list(dict.fromkeys(
+            lnk["domain"] for lnk in preprocess.outbound_links if lnk["domain"]
+        ))[:20]
+        lines.append(f"OUTBOUND DOMAINS ({len(preprocess.outbound_links)} links total): {', '.join(domains)}")
+
+    return "\n".join(lines) + "\n\n---\n\nDOCUMENT TEXT:\n" + preprocess.text
 
 
 def _fetch_active_lexicon_terms(config: Config) -> list[dict]:

@@ -43,6 +43,18 @@ def checkpoint_preprocess(result: PreprocessResult) -> bool:
     table.add_row("Quality:", _quality_badge(result.quality))
     table.add_row("Characters:", str(result.char_count))
     table.add_row("Truncated:", "yes" if result.truncated else "no")
+    if result.title:
+        table.add_row("Title:", result.title)
+    if result.sitename:
+        table.add_row("Publisher:", result.sitename)
+    if result.hostname:
+        table.add_row("Domain:", result.hostname)
+    if result.author:
+        table.add_row("Author:", result.author)
+    if result.date_published:
+        table.add_row("Date published:", result.date_published)
+    if result.outbound_links:
+        table.add_row("Outbound links:", str(len(result.outbound_links)))
     if result.language_detected:
         table.add_row("Language detected:", result.language_detected)
     if result.ocr_images:

@@ -163,6 +163,18 @@ def _build_sanity_document(pkg: DocumentPackage) -> dict:
             "resolution":      "not_applicable",
         },
 
+        "referencedUrls": [
+            {
+                "_key":       f"link-{i}",
+                "url":        lnk["url"],
+                "anchorText": lnk.get("anchor_text", ""),
+                "domain":     lnk.get("domain", ""),
+                "linkType":   "outbound",
+                "resolved":   False,
+            }
+            for i, lnk in enumerate(prep.outbound_links[:50])
+        ],
+
         "testimonyFlag": analysis.testimony_flag,
         "needsReview":   analysis.needs_review,
 

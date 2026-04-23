@@ -55,23 +55,42 @@ def run(intake: IntakeResult, config: Config, max_chars: int | None = None) -> P
 def _preprocess_url(url: str) -> PreprocessResult:
     try:
         import trafilatura
-        downloaded = trafilatura.fetch_url(url)
-        if not downloaded:
-            raise ValueError("trafilatura: empty download")
-        text = trafilatura.extract(downloaded) or ""
-        md   = trafilatura.extract(downloaded, output_format="markdown") or text
-        quality = _rate_quality(text, "trafilatura")
-        return PreprocessResult(
-            doc_id="",
-            tool_used="trafilatura",
-            quality=quality,
-            text=text,
-            markdown=md,
-        )
     except ImportError:
-        raise RuntimeError(
-            "trafilatura is not installed. Run: pip install trafilatura"
-        )
+        raise RuntimeError("trafilatura is not installed. Run: pip install trafilatura")
+
+    downloaded = trafilatura.fetch_url(url)
+    if not downloaded:
+        raise ValueError(f"trafilatura: could not fetch {url}")
+
+    # JSON output gives us structured metadata alongside the text
+    import json as _json
+    json_str = trafilatura.extract(
+        downloaded,
+        output_format="json",
+        include_comments=False,
+        favor_precision=True,
+    )
+    metadata: dict = _json.loads(json_str) if json_str else {}
+    text = metadata.get("text") or trafilatura.extract(downloaded) or ""
+    md   = trafilatura.extract(downloaded, output_format="markdown") or text
+
+    # Extract outbound links via lxml (already a trafilatura dependency)
+    outbound_links = _extract_links(downloaded, base_url=url)
+
+    return PreprocessResult(
+        doc_id="",
+        tool_used="trafilatura",
+        quality=_rate_quality(text, "trafilatura"),
+        text=text,
+        markdown=md,
+        title=metadata.get("title", ""),
+        author=metadata.get("author", ""),
+        date_published=metadata.get("date", ""),
+        sitename=metadata.get("sitename", ""),
+        description=metadata.get("description", ""),
+        hostname=metadata.get("hostname", ""),
+        outbound_links=outbound_links,
+    )
 
 
 def _preprocess_pdf(path: Path) -> PreprocessResult:
@@ -217,6 +236,36 @@ def _maybe_truncate(text: str, limit: int = _DEFAULT_LIMIT) -> tuple[str, bool]:
     tail = text[-tail_size:]
     truncated = f"{head}\n\n[TRUNCATED — {len(text)} total chars, showing first {head_size} + last {tail_size}]\n\n{tail}"
     return truncated, True
+
+
+def _extract_links(html: str, base_url: str, max_links: int = 80) -> list[dict]:
+    """Extract outbound links from raw HTML using lxml. Returns up to max_links entries."""
+    from urllib.parse import urljoin, urlparse
+    try:
+        from lxml import html as lxml_html
+        tree = lxml_html.fromstring(html.encode() if isinstance(html, str) else html)
+    except Exception:
+        return []
+
+    seen: set[str] = set()
+    links: list[dict] = []
+    for a in tree.xpath("//a[@href]"):
+        href = (a.get("href") or "").strip()
+        if not href or href.startswith("#") or href.startswith("mailto:"):
+            continue
+        full = urljoin(base_url, href)
+        parsed = urlparse(full)
+        if parsed.scheme not in ("http", "https") or full in seen:
+            continue
+        seen.add(full)
+        links.append({
+            "url":         full,
+            "anchor_text": (a.text_content() or "").strip()[:120],
+            "domain":      parsed.netloc,
+        })
+        if len(links) >= max_links:
+            break
+    return links
 
 
 def _save_artifacts(result: PreprocessResult, doc_dir: Path) -> None:

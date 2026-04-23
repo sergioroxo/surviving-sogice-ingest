@@ -170,10 +170,18 @@ class PreprocessResult:
     quality: Literal["high", "medium", "low", "blocked"]
     text: str                              # clean extracted text (primary context for LLM)
     markdown: Optional[str] = None        # structure-preserving markdown (Docling output)
-    ocr_images: list[dict] = field(default_factory=list)   # [{imageRef, ocrText, ocrConfidence}]
+    ocr_images: list[dict] = field(default_factory=list)
     char_count: int = 0
     truncated: bool = False
     language_detected: Optional[str] = None
+    # Rich provenance metadata (populated by trafilatura / docling)
+    title: str = ""
+    author: str = ""
+    date_published: str = ""
+    sitename: str = ""                     # publisher / organisation name as found on the page
+    description: str = ""                  # meta description or lede
+    hostname: str = ""                     # bare domain, e.g. christianconcern.com
+    outbound_links: list[dict] = field(default_factory=list)  # [{url, anchor_text, domain}]
 
 
 @dataclass
