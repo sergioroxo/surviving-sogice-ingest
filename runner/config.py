@@ -20,7 +20,9 @@ class Config:
 
     ollama_base_url: str
     embedding_model: str
-    local_analysis_model: str
+    local_analysis_model: str           # default / quick  (--llm local)
+    local_analysis_model_heavy: str     # long docs / rich interpretation (--llm local-heavy)
+    local_analysis_model_reasoning: str # ambiguous docs / confidence (--llm local-reasoning)
     claude_model: str
     openrouter_api_key: str
     openrouter_model: str
@@ -76,7 +78,9 @@ def load_config(llm: str | None = None) -> Config:
         exports_dir=exports_dir,
         ollama_base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
         embedding_model=os.getenv("EMBEDDING_MODEL", "qwen3-embedding:4b"),
-        local_analysis_model=os.getenv("LOCAL_ANALYSIS_MODEL", "gemma4:e4b"),
+        local_analysis_model=os.getenv("LOCAL_ANALYSIS_MODEL", "qwen3.5:9b"),
+        local_analysis_model_heavy=os.getenv("LOCAL_ANALYSIS_MODEL_HEAVY", "gemma-4-26B-A4B-it"),
+        local_analysis_model_reasoning=os.getenv("LOCAL_ANALYSIS_MODEL_REASONING", "Ministral-3-14B-Reasoning-2512"),
         claude_model=os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6"),
         openrouter_api_key=os.getenv("OPENROUTER_API_KEY", ""),
         openrouter_model=os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free"),

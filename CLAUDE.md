@@ -19,16 +19,36 @@ Key docs:
 
 ## Local Model Stack (MacBook Pro M4, 24 GB RAM)
 
-| Task | Default | Alternative |
+### Embedding
+| Task | Model | Notes |
 |---|---|---|
-| Embeddings | `qwen3-embedding:4b` via Ollama | `embeddinggemma` (lighter) |
-| Local LLM analysis | `gemma4:e4b` via Ollama | `gemma4:12b` (push quality) |
-| Primary LLM | Claude API (`claude-sonnet-4-6`) | — |
-| Transcription | `faster-whisper` (local) | — |
-| OCR | Tesseract | — |
-| Phase 2 semantic map | UMAP + HDBSCAN + BERTopic | — |
+| Embeddings | `qwen3-embedding:4b` via Ollama | Verified 2560d output |
 
-Long transcripts (SRT, books >40k chars) default to `--llm local`.
+### Analysis — Three-tier local strategy (Codex recommendation)
+
+| Tier | Model | `--llm` flag | Use when |
+|---|---|---|---|
+| Default | `qwen3.5:9b` | `local` | Everyday processing; best multilingual + JSON reliability |
+| Heavy | `gemma-4-26B-A4B-it` | `local-heavy` | Long books, long SRTs, interpretive fields (tactic/harm/flags/summary/assets) |
+| Reasoning | `Ministral-3-14B-Reasoning-2512` | `local-reasoning` | Ambiguous docs; evidence justification; confidence scoring |
+| Primary | Claude API (`claude-sonnet-4-6`) | `claude` | Gold standard; required for Tier 1 final classification |
+
+**Deployment strategy (Codex):**
+- `qwen3.5:9b` as default local model — quality/speed/RAM balance
+- `gemma-4-26B-A4B-it` only for the hardest/longest documents (risk: 24 GB RAM pressure)
+- `Ministral-3-14B-Reasoning-2512` as reasoning comparison when a document is especially ambiguous
+
+> Run `ollama list` to verify exact model names installed on your machine.
+> Update `LOCAL_ANALYSIS_MODEL`, `LOCAL_ANALYSIS_MODEL_HEAVY`, `LOCAL_ANALYSIS_MODEL_REASONING` in `runner/.env` to match.
+
+### Other tools
+| Task | Tool |
+|---|---|
+| Transcription | `faster-whisper` (local) |
+| OCR | Tesseract |
+| Phase 2 semantic map | UMAP + HDBSCAN + BERTopic |
+
+Long transcripts (SRT, books >40k chars) default to `--llm local-heavy`.
 
 ---
 
@@ -39,9 +59,10 @@ Long transcripts (SRT, books >40k chars) default to `--llm local`.
 | ~~**Q22**~~ | ~~Verify `qwen3-embedding:4b` output dimension~~ — **RESOLVED: 2560d** | ~~Phase 0-B~~ unblocked |
 | Q14 | JUST CHANGE™ ↔ i-Doc integration method | Phase 4 October build |
 | Q18 | Testimony removal formal protocol | Phase 3 publication |
+| Q23 | RAM usage of `gemma-4-26B-A4B-it` on M4 24 GB — test before setting as default for heavy docs | Phase 0.5 |
 
-**Q22 resolved (April 2026):** `qwen3-embedding:4b output dimension = 2560d`  
-Use `vector(2560)` in Supabase. Verified with `python -m runner embed-test`.
+**Q22 resolved (April 2026):** `qwen3-embedding:4b output dimension = 2560d`
+Use `vector(2560)` in Supabase. Verified with `python3 -m runner embed-test`.
 
 ---
 
@@ -51,6 +72,7 @@ Use `vector(2560)` in Supabase. Verified with `python -m runner embed-test`.
 - [x] Create Sanity project (EU/Norwegian region) — project ID `eqg5bxk6`, dataset `production`
 - [x] Implement all 12 content types from `SANITY_SCHEMA_v1.0.md`
 - [x] Add `accessibleDefinition` field to `lexiconEntry` type
+- [x] Fix reserved type name: `document` → `sogiceDocument` across all schema files
 - [ ] Configure researcher + intern roles
 - [ ] Seed persons and organizations from `Entity_Registry_v1.1.md` (~15 persons, ~50 orgs)
 - [ ] Seed laws and events (~12 laws, ~10 events)
@@ -66,32 +88,40 @@ Use `vector(2560)` in Supabase. Verified with `python -m runner embed-test`.
 - [x] Create `document_embeddings` table with `vector(2560)` column
 - [x] ~~Create ivfflat index~~ — **deferred to Phase 2** (pgvector 2000d limit; hnsw also blocked; sequential scan fine at pilot scale)
 - [x] Add `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` to `runner/.env`
-- [ ] Test: ingest one document → verify null-vector row appears
+- [ ] **Run `python3 -m runner embed-test`** — verify Ollama is running + embedding dimension
+- [ ] **Test full pipeline end-to-end** — ingest one URL → verify Sanity record + Supabase row created
 
 ### MVP CLI Runner (`runner/`)
 - [x] Project skeleton (`main.py`, `config.py`, `models/`, `pipeline/`, `clients/`)
-- [x] Pydantic models for ingestion-v3.1 output schema
+- [x] Pydantic models for ingestion-v3.1 output schema (`models/document.py`)
 - [x] `requirements.txt` + `.env.example`
-- [ ] **`pipeline/intake.py`** — URL/file detection, doc_id generation, Wayback Machine check
-- [ ] **`pipeline/preprocess.py`** — Docling (PDF), Trafilatura (URL), yt-dlp + faster-whisper (video)
-- [ ] **`pipeline/embed.py`** — Ollama qwen3-embedding:4b call, save to `embedding.json`
-- [ ] **`pipeline/analyze.py`** — Claude API call + Ollama fallback, Pydantic validation of response
-- [ ] **`pipeline/review.py`** — Rich terminal checkpoints 1–4
-- [ ] **`pipeline/upload.py`** — Sanity REST write + Supabase row insert
-- [ ] **`clients/sanity.py`** — httpx Sanity Content API client
-- [ ] **`clients/supabase.py`** — supabase-py client wrapper
-- [ ] End-to-end test: one URL through full pipeline
+- [x] **`pipeline/intake.py`** — URL/file detection, doc_id, Wayback Machine, deduplication check
+- [x] **`pipeline/preprocess.py`** — Docling (PDF), Trafilatura (URL+full HTML intel), yt-dlp + faster-whisper (video)
+- [x] **`pipeline/embed.py`** — Ollama qwen3-embedding:4b, legacy endpoint fallback
+- [x] **`pipeline/analyze.py`** — Claude + Ollama + OpenRouter routing, lexicon injection, Pydantic validation
+- [x] **`pipeline/review.py`** — Rich terminal checkpoints 1–4, edit-JSON with retry loop
+- [x] **`pipeline/upload.py`** — Sanity REST write + Supabase insert + local save + audit log
+- [x] **`clients/sanity.py`** — httpx Sanity Content API, referencedUrls builder
+- [x] **`clients/supabase.py`** — supabase-py upsert
+- [x] Configurable truncation (`--max-chars`, per-LLM defaults in `.env`)
+- [x] OpenRouter LLM option (`--llm openrouter`)
+- [x] Confidence score auto-derivation when LLM omits overall_score
+- [x] Source deduplication warning before intake
+- [ ] **Three-tier local model routing** (`--llm local-heavy`, `--llm local-reasoning`)
+- [ ] **End-to-end test**: one URL ingested + uploaded to Sanity + Supabase ← **next milestone**
 
 ### Phase 0.5 — Pilot Batch
+- [ ] Pull and verify local models: `ollama pull qwen3.5:9b` + `gemma-4-26B-A4B-it` (check RAM)
 - [ ] Run 10–20 documents covering all 6 languages + all tiers
 - [ ] Calibrate confidence thresholds (baseline: high ≥0.85, medium 0.70–0.84, low <0.70)
 - [ ] Calibrate validation triggers
 - [ ] Test lexicon Track B (approve ≥5 candidate terms)
 - [ ] Test model-agnostic export + reimport
+- [ ] Measure RAM/time for `gemma-4-26B-A4B-it` to settle Q23
 
 ### Phase 1 — Full Ingestion Pipeline
 - [ ] Validation batch system
-- [ ] Review queue (`/review/queue` on Vercel or Streamlit)
+- [ ] Review queue (Streamlit or Vercel `/review/queue`)
 - [ ] Lexicon Track B UI
 - [ ] JSON export to GitHub per batch
 
@@ -100,6 +130,7 @@ Use `vector(2560)` in Supabase. Verified with `python -m runner embed-test`.
 - [ ] Markdown preview tab
 - [ ] Candidate term approval forms
 - [ ] JSON diff viewer (Claude vs local LLM)
+- [ ] RAM / processing time monitor (to evaluate heavy models — resolves Q23)
 
 ### Deferred
 - [ ] Vercel app (Phase 1–2)
@@ -113,22 +144,34 @@ Use `vector(2560)` in Supabase. Verified with `python -m runner embed-test`.
 
 ```bash
 # Install
-cd runner && pip install -r requirements.txt
+cd runner && pip3 install -r requirements.txt
 cp .env.example .env  # fill in API keys
 
-# Use
-python -m runner ingest https://example.org/document
-python -m runner ingest document.pdf --tier 2
-python -m runner ingest recording.mp4 --llm local
-python -m runner ingest document.pdf --llm both   # Claude + Ollama, compare outputs
+# Verify Ollama embedding (do before first ingest)
+python3 -m runner embed-test
 
-python -m runner status                  # show locally saved, not yet uploaded
-python -m runner upload <doc_id>         # push a saved document to Sanity
-python -m runner export batch-07         # export batch JSON to exports/batch-07/
+# Ingest
+python3 -m runner ingest https://example.org/document            # Claude (default quality)
+python3 -m runner ingest https://example.org/document --llm local           # qwen3.5:9b
+python3 -m runner ingest document.pdf --llm local-heavy          # gemma-4-26B heavy
+python3 -m runner ingest ambiguous.pdf --llm local-reasoning     # Ministral reasoning
+python3 -m runner ingest recording.mp4 --llm local-heavy         # long transcript
+python3 -m runner ingest document.pdf --llm both                 # Claude + local, shows diff
+python3 -m runner ingest https://example.org --llm openrouter    # free OpenRouter model
 
-# Verify embedding dimension (do this before Phase 0-B)
-python -m runner embed-test
+python3 -m runner status                    # show locally saved, not yet uploaded
+python3 -m runner upload-doc <doc_id>       # push a saved document to Sanity + Supabase
+python3 -m runner export batch-07           # export batch JSON to exports/batch-07/
 ```
+
+---
+
+## Known Issues / Gotchas
+
+- **Sanity type name**: custom document schema is `sogiceDocument` (not `document` — Sanity built-in conflict)
+- **Python on macOS**: use `python3` / `pip3`, not `python` (ships as Python 2.7)
+- **Free OpenRouter models**: weaker on Pro/Anti-SOGICE classification — use `--llm claude` for Tier 1 docs or manually correct at Checkpoint 3 (`e` → edit JSON → change `type` field)
+- **Ollama model names**: verify with `ollama list` before setting in `.env`; heavy models may require `--max-chars 0` for full context
 
 ---
 
@@ -141,12 +184,12 @@ runner/
 ├── models/
 │   └── document.py       # Pydantic models for ingestion-v3.1 output schema
 ├── pipeline/
-│   ├── intake.py         # Checkpoint 1: source detection, doc_id, Wayback
-│   ├── preprocess.py     # Checkpoint 2: Docling / Trafilatura / yt-dlp / Whisper
-│   ├── embed.py          # qwen3-embedding:4b via Ollama
-│   ├── analyze.py        # Claude API + Ollama routing, Pydantic validation
-│   ├── review.py         # Checkpoints 1–4 Rich terminal UI
-│   └── upload.py         # Sanity write + Supabase insert + local save
+│   ├── intake.py         # Stage 1: source detection, doc_id, Wayback, dedup
+│   ├── preprocess.py     # Stage 2: Docling / Trafilatura / yt-dlp / Whisper + HTML intel
+│   ├── embed.py          # Stage 3a: qwen3-embedding:4b via Ollama
+│   ├── analyze.py        # Stage 3b: Claude / Ollama (3-tier) / OpenRouter routing
+│   ├── review.py         # Checkpoints 1–4: Rich terminal UI
+│   └── upload.py         # Stage 5: Sanity write + Supabase insert + local save
 └── clients/
     ├── sanity.py         # httpx Sanity Content API client
     └── supabase.py       # supabase-py wrapper

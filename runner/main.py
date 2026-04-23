@@ -27,7 +27,7 @@ console = Console()
 @app.command()
 def ingest(
     source: str = typer.Argument(..., help="URL, PDF path, video file, SRT, or EPUB"),
-    llm: str = typer.Option("claude", help="LLM: claude | local | openrouter | both | prefer-local | prefer-claude"),
+    llm: str = typer.Option("claude", help="LLM: claude | local | local-heavy | local-reasoning | openrouter | both | prefer-local | prefer-claude"),
     tier: Optional[int] = typer.Option(None, help="Override auto-assigned tier (1|2|3)"),
     batch: Optional[str] = typer.Option(None, help="Assign to existing batch ID"),
     max_chars: Optional[int] = typer.Option(None, "--max-chars", help="Truncation limit in characters (overrides .env). Use 0 for no truncation."),
@@ -59,7 +59,7 @@ def ingest(
     # max_chars=0 means no truncation; None means pick from config by LLM mode
     if max_chars is not None:
         effective_max = None if max_chars == 0 else max_chars
-    elif llm in ("local", "prefer-local"):
+    elif llm in ("local", "local-heavy", "local-reasoning", "prefer-local"):
         effective_max = config.truncation_limit_local
     else:
         effective_max = config.truncation_limit

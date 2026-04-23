@@ -5,12 +5,14 @@ Builds the ingestion-v3.1 prompt, calls Claude or Ollama, validates the JSON
 response with Pydantic, and writes analysis.json to the local corpus directory.
 
 LLM routing (controlled by --llm flag):
-  claude        → Anthropic API only
-  local         → Ollama (gemma4:e4b by default)
-  openrouter    → OpenRouter API (set OPENROUTER_MODEL in .env)
-  both          → run both Claude + local, review.py shows diff at Checkpoint 3
-  prefer-local  → Ollama first, Claude fallback on low confidence or error
-  prefer-claude → Claude first, Ollama fallback on API failure
+  claude          → Anthropic API only (gold standard)
+  local           → Ollama LOCAL_ANALYSIS_MODEL (qwen3.5:9b — everyday default)
+  local-heavy     → Ollama LOCAL_ANALYSIS_MODEL_HEAVY (gemma-4-26B — long/complex docs)
+  local-reasoning → Ollama LOCAL_ANALYSIS_MODEL_REASONING (Ministral — ambiguous docs)
+  openrouter      → OpenRouter API (set OPENROUTER_MODEL in .env)
+  both            → run both Claude + local, review.py shows diff at Checkpoint 3
+  prefer-local    → Ollama first, Claude fallback on low confidence or error
+  prefer-claude   → Claude first, Ollama fallback on API failure
 """
 from __future__ import annotations
 import json
@@ -52,16 +54,20 @@ def run(
     if llm == "claude":
         return _analyze_with_claude(preprocess, config)
     if llm == "local":
-        return _analyze_with_ollama(preprocess, config)
+        return _analyze_with_ollama(preprocess, config, config.local_analysis_model)
+    if llm == "local-heavy":
+        return _analyze_with_ollama(preprocess, config, config.local_analysis_model_heavy)
+    if llm == "local-reasoning":
+        return _analyze_with_ollama(preprocess, config, config.local_analysis_model_reasoning)
     if llm == "openrouter":
         return _analyze_with_openrouter(preprocess, config)
     if llm == "both":
         claude_result = _analyze_with_claude(preprocess, config)
-        local_result  = _analyze_with_ollama(preprocess, config)
+        local_result  = _analyze_with_ollama(preprocess, config, config.local_analysis_model)
         return _merge_for_review(claude_result, local_result)
     if llm == "prefer-local":
         try:
-            result = _analyze_with_ollama(preprocess, config)
+            result = _analyze_with_ollama(preprocess, config, config.local_analysis_model)
             if result.confidence.status == "low":
                 return _analyze_with_claude(preprocess, config)
             return result
@@ -71,7 +77,7 @@ def run(
         try:
             return _analyze_with_claude(preprocess, config)
         except Exception:
-            return _analyze_with_ollama(preprocess, config)
+            return _analyze_with_ollama(preprocess, config, config.local_analysis_model)
     raise ValueError(f"Unknown LLM option: {llm!r}")
 
 
@@ -91,7 +97,7 @@ def _analyze_with_claude(preprocess: PreprocessResult, config: Config) -> Analys
     return _validate_response(raw_json)
 
 
-def _analyze_with_ollama(preprocess: PreprocessResult, config: Config) -> AnalysisResult:
+def _analyze_with_ollama(preprocess: PreprocessResult, config: Config, model: str) -> AnalysisResult:
     import httpx
     system_prompt = _build_system_prompt_with_lexicon(config)
     user_message  = _build_user_message(preprocess)
@@ -99,7 +105,7 @@ def _analyze_with_ollama(preprocess: PreprocessResult, config: Config) -> Analys
     response = httpx.post(
         f"{config.ollama_base_url}/api/chat",
         json={
-            "model": config.local_analysis_model,
+            "model": model,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user",   "content": user_message},
