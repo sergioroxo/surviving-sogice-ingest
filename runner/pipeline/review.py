@@ -51,17 +51,15 @@ def checkpoint_preprocess(result: PreprocessResult) -> bool:
     console.print(Panel(table, title="[bold]PREPROCESSING RESULT[/bold]"))
 
     action = typer.prompt(
-        "Action",
-        default="proceed",
-        show_choices=True,
-        type=click.Choice(["proceed", "edit", "abort"]),
-    )
-    if action == "abort":
+        "Action [Enter=proceed / e=edit / a=abort]",
+        default="",
+    ).strip().lower()
+    if action in ("a", "abort"):
         return False
-    if action == "edit":
+    if action in ("e", "edit"):
         _open_in_editor(result)
         return checkpoint_preprocess(result)
-    return True
+    return True  # Enter / "proceed" / anything else → proceed
 
 
 def checkpoint_analysis(
@@ -108,15 +106,14 @@ def checkpoint_analysis(
         )
 
     action = typer.prompt(
-        "Action",
-        default="accept",
-        type=click.Choice(["accept", "edit-json", "abort"]),
-    )
-    if action == "abort":
+        "Action [Enter=accept / e=edit-json / a=abort]",
+        default="",
+    ).strip().lower()
+    if action in ("a", "abort"):
         return None
-    if action == "edit-json":
+    if action in ("e", "edit-json", "edit"):
         return _edit_analysis_json(result, doc_id)
-    return result
+    return result  # Enter / "accept" → proceed
 
 
 def checkpoint_upload(doc_id: str, result: AnalysisResult) -> bool:
@@ -138,11 +135,10 @@ def checkpoint_upload(doc_id: str, result: AnalysisResult) -> bool:
     console.print(will_do)
 
     action = typer.prompt(
-        "Action",
-        default="upload",
-        type=click.Choice(["upload", "local-only", "review-again", "abort"]),
-    )
-    return action == "upload"
+        "Action [Enter=upload / l=local-only / a=abort]",
+        default="",
+    ).strip().lower()
+    return action not in ("l", "local-only", "a", "abort", "review-again")
 
 
 # ---------------------------------------------------------------------------

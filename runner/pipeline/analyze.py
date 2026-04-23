@@ -23,7 +23,7 @@ from ..models.document import AnalysisResult, PreprocessResult
 PROMPT_VERSION = "ingestion-v3.1"
 
 _PROMPT_FILE = (
-    Path(__file__).parents[3]
+    Path(__file__).parents[2]
     / "02_working_tools"
     / "Claude_Ingestion_Prompt.md"
 )
