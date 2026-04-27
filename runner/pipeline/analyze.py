@@ -111,12 +111,15 @@ def _analyze_with_ollama(preprocess: PreprocessResult, config: Config, model: st
                 {"role": "user",   "content": user_message},
             ],
             "stream": False,
+            "think": False,   # disable Qwen3 extended thinking — keeps content in message.content
             "options": {"temperature": 0.1},
         },
         timeout=300,
     )
     response.raise_for_status()
-    raw_json = response.json()["message"]["content"]
+    # When think=False fails (non-Qwen3 model), fall back to full response content
+    msg = response.json()["message"]
+    raw_json = msg.get("content") or msg.get("thinking", "")
     return _validate_response(raw_json)
 
 
@@ -254,11 +257,20 @@ def _fetch_active_lexicon_terms(config: Config) -> list[dict]:
 
 
 def _validate_response(raw_json: str) -> AnalysisResult:
-    """Strip any markdown fences, parse JSON, validate with Pydantic."""
+    """Strip markdown fences and Qwen3 think tags, parse JSON, validate with Pydantic."""
     text = raw_json.strip()
+    # Strip <think>...</think> blocks (Qwen3 extended thinking)
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
     # Strip ```json ... ``` or ``` ... ``` wrappers
     text = re.sub(r"^```(?:json)?\s*", "", text)
-    text = re.sub(r"\s*```$", "", text)
+    text = re.sub(r"\s*```$", "", text.strip())
+    # If still empty or no JSON object found, raise clearly
+    if not text:
+        raise ValueError("LLM returned empty response after stripping think/fence blocks")
+    # Extract the first {...} JSON object if there's surrounding prose
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if match:
+        text = match.group(0)
     data = json.loads(text)
     return AnalysisResult.model_validate(data)
 
