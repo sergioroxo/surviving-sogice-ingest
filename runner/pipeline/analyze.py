@@ -116,7 +116,7 @@ def _analyze_with_ollama(preprocess: PreprocessResult, config: Config, model: st
             "options": {
                 "temperature": 0.1,
                 "num_ctx": 16384,
-                "num_predict": 4096,
+                "num_predict": 8192,
             },
         },
         timeout=300,

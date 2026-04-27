@@ -128,6 +128,17 @@ class AnalysisResult(BaseModel):
     format: DocumentFormat
     evidence: list[str]
     scope: Scope
+
+    @model_validator(mode="before")
+    @classmethod
+    def unwrap_scalar_lists(cls, data: dict) -> dict:
+        """Local models sometimes wrap scalar fields in a single-element list.
+        Coerce ["Anti-SOGICE"] → "Anti-SOGICE" for Literal-typed fields."""
+        for key in ("type", "format", "scope", "narrative_register"):
+            val = data.get(key)
+            if isinstance(val, list) and len(val) == 1:
+                data[key] = val[0]
+        return data
     country: list[str] = Field(default_factory=list)
     tactic: list[str] = Field(default_factory=list)
     actor: list[str] = Field(default_factory=list)
