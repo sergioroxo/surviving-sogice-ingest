@@ -121,6 +121,12 @@ def _analyze_with_ollama(preprocess: PreprocessResult, config: Config, model: st
     # If content is empty the model only thought and forgot to output — fall back to
     # extracting JSON from the thinking field itself.
     raw_json = msg.get("content", "").strip() or msg.get("thinking", "")
+    if not raw_json:
+        import sys
+        print(f"\n[DEBUG] Full Ollama message keys: {list(msg.keys())}", file=sys.stderr)
+        print(f"[DEBUG] content repr: {repr(msg.get('content'))}", file=sys.stderr)
+        print(f"[DEBUG] thinking repr: {repr(msg.get('thinking', ''))[:200]}", file=sys.stderr)
+        raise ValueError("Ollama returned empty content and empty thinking — see debug above")
     return _validate_response(raw_json)
 
 
