@@ -111,9 +111,13 @@ def _analyze_with_ollama(preprocess: PreprocessResult, config: Config, model: st
                 {"role": "user",   "content": user_message},
             ],
             "stream": False,
-            "options": {"temperature": 0.1},
+            "options": {
+                "temperature": 0.1,
+                "num_ctx": 16384,       # cap context window — keeps inference fast
+                "num_predict": 4096,    # cap output tokens — prevents infinite thinking loops
+            },
         },
-        timeout=300,
+        timeout=600,  # 10 min — thinking models are slow on first run
     )
     response.raise_for_status()
     msg = response.json()["message"]
