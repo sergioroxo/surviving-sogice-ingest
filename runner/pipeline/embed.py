@@ -26,7 +26,7 @@ def _call(ollama_base_url: str, model: str, text: str) -> list[float]:
     try:
         response = httpx.post(
             f"{ollama_base_url}/api/embed",
-            json={"model": model, "input": text},
+            json={"model": model, "input": text, "keep_alive": 0},
             timeout=_TIMEOUT,
         )
         response.raise_for_status()
@@ -39,7 +39,7 @@ def _call(ollama_base_url: str, model: str, text: str) -> list[float]:
     # Legacy endpoint fallback (Ollama < 0.4)
     response = httpx.post(
         f"{ollama_base_url}/api/embeddings",
-        json={"model": model, "prompt": text},
+        json={"model": model, "prompt": text, "keep_alive": 0},
         timeout=_TIMEOUT,
     )
     response.raise_for_status()
