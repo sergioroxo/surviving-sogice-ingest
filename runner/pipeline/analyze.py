@@ -122,11 +122,9 @@ def _analyze_with_ollama(preprocess: PreprocessResult, config: Config, model: st
     # extracting JSON from the thinking field itself.
     raw_json = msg.get("content", "").strip() or msg.get("thinking", "")
     if not raw_json:
-        import sys
-        print(f"\n[DEBUG] Full Ollama message keys: {list(msg.keys())}", file=sys.stderr)
-        print(f"[DEBUG] content repr: {repr(msg.get('content'))}", file=sys.stderr)
-        print(f"[DEBUG] thinking repr: {repr(msg.get('thinking', ''))[:200]}", file=sys.stderr)
-        raise ValueError("Ollama returned empty content and empty thinking — see debug above")
+        raise ValueError(
+            f"Ollama returned empty response. Message keys: {list(msg.keys())}"
+        )
     return _validate_response(raw_json)
 
 
@@ -246,7 +244,7 @@ def _build_user_message(preprocess: PreprocessResult) -> str:
                 f"OUTBOUND DOMAINS ({len(preprocess.outbound_links)} links): {', '.join(domains)}"
             )
 
-    return "\n".join(lines) + "\n\n---\n\nDOCUMENT TEXT:\n" + preprocess.text
+    return "\n".join(lines) + "\n\n---\n\nDOCUMENT TEXT:\n" + preprocess.text + "\n\n---\n\nOutput ONLY a valid JSON object. Start with { and end with }. No explanation, no prose, no markdown fences."
 
 
 def _fetch_active_lexicon_terms(config: Config) -> list[dict]:
@@ -264,22 +262,42 @@ def _fetch_active_lexicon_terms(config: Config) -> list[dict]:
 
 
 def _validate_response(raw_json: str) -> AnalysisResult:
-    """Strip markdown fences and Qwen3 think tags, parse JSON, validate with Pydantic."""
-    text = raw_json.strip()
-    # Strip <think>...</think> blocks (Qwen3 extended thinking)
-    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
-    # Strip ```json ... ``` or ``` ... ``` wrappers
-    text = re.sub(r"^```(?:json)?\s*", "", text)
-    text = re.sub(r"\s*```$", "", text.strip())
-    # If still empty or no JSON object found, raise clearly
-    if not text:
-        raise ValueError("LLM returned empty response after stripping think/fence blocks")
-    # Extract the first {...} JSON object if there's surrounding prose
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if match:
-        text = match.group(0)
-    data = json.loads(text)
-    return AnalysisResult.model_validate(data)
+    """Extract and validate JSON from LLM response, handling think tags and markdown fences."""
+    original = raw_json.strip()
+
+    def _try_extract(text: str) -> AnalysisResult | None:
+        text = re.sub(r"^```(?:json)?\s*", "", text.strip())
+        text = re.sub(r"\s*```$", "", text.strip())
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if not match:
+            return None
+        try:
+            return AnalysisResult.model_validate(json.loads(match.group(0)))
+        except Exception:
+            return None
+
+    # 1. Try content outside think tags (normal case)
+    outside = re.sub(r"<think>.*?</think>", "", original, flags=re.DOTALL).strip()
+    result = _try_extract(outside)
+    if result:
+        return result
+
+    # 2. Try content inside think tags (model embedded JSON in its reasoning)
+    inside_blocks = re.findall(r"<think>(.*?)</think>", original, re.DOTALL)
+    for block in inside_blocks:
+        result = _try_extract(block)
+        if result:
+            return result
+
+    # 3. Try the raw text with no tag stripping (non-thinking model)
+    result = _try_extract(original)
+    if result:
+        return result
+
+    raise ValueError(
+        f"Could not extract valid JSON from model response.\n"
+        f"Raw response (first 500 chars): {original[:500]}"
+    )
 
 
 def _merge_for_review(claude: AnalysisResult, local: AnalysisResult) -> AnalysisResult:
