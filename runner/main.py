@@ -125,7 +125,7 @@ def embed_test():
     load_dotenv()
 
     ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-    model = os.getenv("EMBEDDING_MODEL", "qwen3-embedding:4b")
+    model = os.getenv("EMBEDDING_MODEL", "qwen3-embedding:8b")
 
     console.print(f"Testing [bold]{model}[/bold] at [bold]{ollama_url}[/bold] ...")
     try:
@@ -135,7 +135,7 @@ def embed_test():
             console.print(Panel(
                 "[red]Cannot connect to Ollama.[/red]\n\n"
                 "Start it with: [bold]ollama serve[/bold]\n"
-                "Then pull the model: [bold]ollama pull qwen3-embedding:4b[/bold]",
+                f"Then pull the model: [bold]ollama pull {model}[/bold]",
                 title="Connection error",
             ))
         else:
@@ -145,7 +145,7 @@ def embed_test():
     console.print(Panel(
         f"[bold green]{model}  →  {dim} dimensions[/bold green]\n\n"
         f"Record this in CLAUDE.md under Open Questions (Q22):\n"
-        f"  qwen3-embedding:4b output dimension = [bold]{dim}d[/bold]\n\n"
+        f"  {model} output dimension = [bold]{dim}d[/bold]\n\n"
         f"Use [bold]vector({dim})[/bold] when creating the Supabase table.",
         title="Embedding Dimension Test ✓",
     ))

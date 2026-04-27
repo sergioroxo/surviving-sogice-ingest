@@ -56,13 +56,13 @@ Long transcripts (SRT, books >40k chars) default to `--llm local-heavy`.
 
 | # | Question | Blocks |
 |---|---|---|
-| **Q22** | Verify `qwen3-embedding:8b` output dimension — run `python3 -m runner embed-test` | Phase 0-B: Supabase vector column must match |
+| ~~**Q22**~~ | ~~Verify `qwen3-embedding:8b` output dimension~~ — **RESOLVED: 4096d** | ~~Phase 0-B~~ unblocked |
 | Q14 | JUST CHANGE™ ↔ i-Doc integration method | Phase 4 October build |
 | Q18 | Testimony removal formal protocol | Phase 3 publication |
 | Q23 | RAM usage of `gemma-4-26B-A4B-it` on M4 24 GB — test before setting as default for heavy docs | Phase 0.5 |
 
-**Q22 pending:** switched to `qwen3-embedding:8b` (pinned version, better quality).
-Run `python3 -m runner embed-test` → record dimension here → update Supabase table if ≠ 2560.
+**Q22 resolved (April 2026):** `qwen3-embedding:8b` output dimension = **4096d**
+Use `vector(4096)` in Supabase. Drop and recreate the table if it was created with `vector(2560)`.
 
 ---
 
@@ -82,11 +82,11 @@ Run `python3 -m runner embed-test` → record dimension here → update Supabase
 - [ ] Export seed JSON snapshot to `03_data/sanity_seed_YYYY-MM-DD.json`
 
 ### Phase 0-B — Supabase Schema
-- [x] **Q22 resolved** — `qwen3-embedding:4b` = **2560d** → use `vector(2560)`
+- [x] **Q22 resolved** — `qwen3-embedding:8b` = **4096d** → use `vector(4096)`
 - [x] Create Supabase project (EU region)
 - [x] Enable pgvector extension
-- [x] Create `document_embeddings` table with `vector(2560)` column
-- [x] ~~Create ivfflat index~~ — **deferred to Phase 2** (pgvector 2000d limit; hnsw also blocked; sequential scan fine at pilot scale)
+- [ ] **Recreate `document_embeddings` table with `vector(4096)`** — drop old `vector(2560)` table first
+- [x] ~~Create ivfflat index~~ — **deferred to Phase 2** (sequential scan fine at pilot scale)
 - [x] Add `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` to `runner/.env`
 - [ ] **Run `python3 -m runner embed-test`** — verify Ollama is running + embedding dimension
 - [ ] **Test full pipeline end-to-end** — ingest one URL → verify Sanity record + Supabase row created
