@@ -112,13 +112,14 @@ def _analyze_with_ollama(preprocess: PreprocessResult, config: Config, model: st
             ],
             "stream": False,
             "format": "json",   # constrained decoding — forces valid JSON output
+            "think": False,     # disable thinking mode — 9B models exhaust tokens reasoning in prose
             "options": {
                 "temperature": 0.1,
                 "num_ctx": 16384,
                 "num_predict": 4096,
             },
         },
-        timeout=600,
+        timeout=300,
     )
     response.raise_for_status()
     msg = response.json()["message"]
