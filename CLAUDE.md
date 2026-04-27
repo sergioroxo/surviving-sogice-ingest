@@ -22,7 +22,7 @@ Key docs:
 ### Embedding
 | Task | Model | Notes |
 |---|---|---|
-| Embeddings | `qwen3-embedding:4b` via Ollama | Verified 2560d output |
+| Embeddings | `qwen3-embedding:8b` via Ollama | Pinned 8b — run embed-test to confirm dimension |
 
 ### Analysis — Three-tier local strategy (Codex recommendation)
 
@@ -56,13 +56,13 @@ Long transcripts (SRT, books >40k chars) default to `--llm local-heavy`.
 
 | # | Question | Blocks |
 |---|---|---|
-| ~~**Q22**~~ | ~~Verify `qwen3-embedding:4b` output dimension~~ — **RESOLVED: 2560d** | ~~Phase 0-B~~ unblocked |
+| **Q22** | Verify `qwen3-embedding:8b` output dimension — run `python3 -m runner embed-test` | Phase 0-B: Supabase vector column must match |
 | Q14 | JUST CHANGE™ ↔ i-Doc integration method | Phase 4 October build |
 | Q18 | Testimony removal formal protocol | Phase 3 publication |
 | Q23 | RAM usage of `gemma-4-26B-A4B-it` on M4 24 GB — test before setting as default for heavy docs | Phase 0.5 |
 
-**Q22 resolved (April 2026):** `qwen3-embedding:4b output dimension = 2560d`
-Use `vector(2560)` in Supabase. Verified with `python3 -m runner embed-test`.
+**Q22 pending:** switched to `qwen3-embedding:8b` (pinned version, better quality).
+Run `python3 -m runner embed-test` → record dimension here → update Supabase table if ≠ 2560.
 
 ---
 
