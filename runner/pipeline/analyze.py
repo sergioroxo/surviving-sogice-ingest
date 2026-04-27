@@ -111,15 +111,16 @@ def _analyze_with_ollama(preprocess: PreprocessResult, config: Config, model: st
                 {"role": "user",   "content": user_message},
             ],
             "stream": False,
-            "think": False,   # disable Qwen3 extended thinking — keeps content in message.content
             "options": {"temperature": 0.1},
         },
         timeout=300,
     )
     response.raise_for_status()
-    # When think=False fails (non-Qwen3 model), fall back to full response content
     msg = response.json()["message"]
-    raw_json = msg.get("content") or msg.get("thinking", "")
+    # Qwen3 thinking models: content holds the response, thinking holds the reasoning.
+    # If content is empty the model only thought and forgot to output — fall back to
+    # extracting JSON from the thinking field itself.
+    raw_json = msg.get("content", "").strip() or msg.get("thinking", "")
     return _validate_response(raw_json)
 
 
