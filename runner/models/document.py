@@ -131,9 +131,12 @@ class AnalysisResult(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def unwrap_scalar_lists(cls, data: dict) -> dict:
-        """Local models sometimes wrap scalar fields in a single-element list.
-        Coerce ["Anti-SOGICE"] → "Anti-SOGICE" for Literal-typed fields."""
+    def normalise_llm_output(cls, data: dict) -> dict:
+        """Normalise quirks from local models before Pydantic field mapping.
+        - Lowercase all top-level keys (local models often return "TYPE", "FORMAT" etc.)
+        - Unwrap single-element lists for Literal scalar fields (["Anti-SOGICE"] → "Anti-SOGICE")
+        """
+        data = {k.lower(): v for k, v in data.items()}
         for key in ("type", "format", "scope", "narrative_register"):
             val = data.get(key)
             if isinstance(val, list) and len(val) == 1:

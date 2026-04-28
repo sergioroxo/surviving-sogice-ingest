@@ -115,7 +115,7 @@ def _analyze_with_ollama(preprocess: PreprocessResult, config: Config, model: st
             "think": False,     # disable thinking mode — 9B models exhaust tokens reasoning in prose
             "options": {
                 "temperature": 0.1,
-                "num_ctx": 16384,
+                "num_ctx": 32768,  # Qwen3's actual context window (16k was our own cap)
                 "num_predict": 8192,
             },
         },
@@ -302,7 +302,7 @@ def _validate_response(raw_json: str) -> AnalysisResult:
 
     raise ValueError(
         f"Could not extract valid JSON from model response.\n"
-        f"Raw response (first 500 chars): {original[:500]}"
+        f"Raw response (first 2000 chars): {original[:2000]}"
     )
 
 
