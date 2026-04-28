@@ -220,7 +220,95 @@ def export_batch(batch_id: str, config: Config) -> None:
     console.print(f"[green]Exported {len(docs)} documents → {out_path}[/green]")
 
 
-def _write_audit_event(doc_dir: Path, event: str) -> None:
+def verify_uploads(limit: int, config: Config) -> None:
+    """Query Sanity and Supabase directly and print what's actually stored there."""
+    import httpx
+
+    console.print("\n[bold]Checking Sanity...[/bold]")
+    sanity_docs: list[dict] = []
+    try:
+        query = (
+            f'*[_type == "sogiceDocument"] | order(_createdAt desc)[0..{limit - 1}]'
+            '{ _id, classification.type, workflowStatus, _createdAt, meta.sourceUrl }'
+        )
+        url = (
+            f"https://{config.sanity_project_id}.api.sanity.io"
+            f"/v2024-01-01/data/query/{config.sanity_dataset}"
+        )
+        r = httpx.get(
+            url,
+            params={"query": query},
+            headers={"Authorization": f"Bearer {config.sanity_write_token}"},
+            timeout=10,
+        )
+        r.raise_for_status()
+        sanity_docs = r.json().get("result", [])
+    except Exception as exc:
+        console.print(f"[red]Sanity query failed: {exc}[/red]")
+
+    console.print("\n[bold]Checking Supabase...[/bold]")
+    supabase_rows: list[dict] = []
+    try:
+        from supabase import create_client
+        sb = create_client(config.supabase_url, config.supabase_service_key)
+        resp = (
+            sb.table("document_embeddings")
+            .select("doc_id, doc_type, created_at")
+            .order("created_at", desc=True)
+            .limit(limit)
+            .execute()
+        )
+        supabase_rows = resp.data or []
+    except Exception as exc:
+        console.print(f"[red]Supabase query failed: {exc}[/red]")
+
+    # --- Sanity table ---
+    if sanity_docs:
+        t = Table(title=f"Sanity — last {len(sanity_docs)} sogiceDocuments")
+        t.add_column("_id", style="dim")
+        t.add_column("type")
+        t.add_column("status")
+        t.add_column("created")
+        t.add_column("source", overflow="fold")
+        for d in sanity_docs:
+            created = (d.get("_createdAt") or "")[:19].replace("T", " ")
+            t.add_row(
+                d.get("_id", ""),
+                d.get("type", "?"),
+                d.get("workflowStatus", "?"),
+                created,
+                d.get("sourceUrl", ""),
+            )
+        console.print(t)
+    else:
+        console.print("[yellow]No documents found in Sanity.[/yellow]")
+
+    # --- Supabase table ---
+    if supabase_rows:
+        t2 = Table(title=f"Supabase — last {len(supabase_rows)} embeddings")
+        t2.add_column("doc_id")
+        t2.add_column("type")
+        t2.add_column("created")
+        for row in supabase_rows:
+            created = (row.get("created_at") or "")[:19].replace("T", " ")
+            t2.add_row(row.get("doc_id", ""), row.get("doc_type", "?"), created)
+        console.print(t2)
+    else:
+        console.print("[yellow]No rows found in Supabase document_embeddings.[/yellow]")
+
+    # --- Cross-check: in Sanity but not Supabase ---
+    sanity_ids = {d["_id"].replace("doc-", "") for d in sanity_docs}
+    supa_ids   = {r["doc_id"] for r in supabase_rows}
+    missing_in_supa = sanity_ids - supa_ids
+    if missing_in_supa:
+        console.print(
+            f"\n[yellow]In Sanity but missing from Supabase:[/yellow] "
+            + ", ".join(sorted(missing_in_supa))
+        )
+    else:
+        console.print("\n[green]✓ All Sanity records also present in Supabase.[/green]")
+
+
     from datetime import datetime, timezone
     ts = datetime.now(timezone.utc).isoformat()
     with (doc_dir / "audit.log").open("a", encoding="utf-8") as f:

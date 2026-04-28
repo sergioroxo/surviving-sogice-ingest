@@ -116,6 +116,15 @@ def export_batch(
     upload.export_batch(batch_id, config)
 
 
+@app.command(name="verify")
+def verify(
+    limit: int = typer.Option(10, help="Number of recent records to show from each system"),
+):
+    """Query Sanity and Supabase directly and print what is actually stored there."""
+    config = load_config()
+    upload.verify_uploads(limit, config)
+
+
 @app.command(name="embed-test")
 def embed_test():
     """Run a test embedding and print the vector dimension. Do this before Phase 0-B.
