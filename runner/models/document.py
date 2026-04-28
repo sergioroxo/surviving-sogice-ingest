@@ -133,14 +133,43 @@ class AnalysisResult(BaseModel):
     @classmethod
     def normalise_llm_output(cls, data: dict) -> dict:
         """Normalise quirks from local models before Pydantic field mapping.
-        - Lowercase all top-level keys (local models often return "TYPE", "FORMAT" etc.)
-        - Unwrap single-element lists for Literal scalar fields (["Anti-SOGICE"] → "Anti-SOGICE")
+
+        Local models (qwen3.5:9b etc.) diverge from the schema in two ways:
+        1. Uppercase keys: "TYPE" → "type"
+        2. Alternative field names: "research_summary" → "summary" etc.
+        3. Single-element lists for scalar fields: ["Anti-SOGICE"] → "Anti-SOGICE"
         """
+        # 1. Lowercase all top-level keys
         data = {k.lower(): v for k, v in data.items()}
+
+        # 2. Remap alternative field names the model commonly uses
+        _key_aliases = {
+            "research_summary": "summary",
+            "landmark_events": "landmark",
+            "priority_score": "priority",
+            "confidence_model": "confidence",
+            "confidence_scores": "confidence",
+        }
+        for old, new in _key_aliases.items():
+            if old in data and new not in data:
+                data[new] = data.pop(old)
+
+        # 3. Remap nested confidence fields:
+        #    confidence_model.overall       → confidence.overall_score
+        #    confidence_model.field_scores  → field_confidence (top-level)
+        conf = data.get("confidence")
+        if isinstance(conf, dict):
+            if "overall" in conf and "overall_score" not in conf:
+                conf["overall_score"] = conf.pop("overall")
+            if "field_scores" in conf and "field_confidence" not in data:
+                data["field_confidence"] = conf.pop("field_scores")
+
+        # 4. Unwrap single-element lists for Literal scalar fields
         for key in ("type", "format", "scope", "narrative_register"):
             val = data.get(key)
             if isinstance(val, list) and len(val) == 1:
                 data[key] = val[0]
+
         return data
     country: list[str] = Field(default_factory=list)
     tactic: list[str] = Field(default_factory=list)
