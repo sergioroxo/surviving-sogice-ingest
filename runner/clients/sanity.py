@@ -224,6 +224,12 @@ def _mutate(mutations: list[dict], config: Config) -> dict:
         "Authorization": f"Bearer {config.sanity_write_token}",
         "Content-Type":  "application/json",
     }
-    response = httpx.post(url, json={"mutations": mutations}, headers=headers, timeout=30)
+    response = httpx.post(
+        url,
+        json={"mutations": mutations},
+        params={"returnIds": "true"},
+        headers=headers,
+        timeout=30,
+    )
     response.raise_for_status()
     return response.json()
