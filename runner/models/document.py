@@ -134,13 +134,14 @@ class AnalysisResult(BaseModel):
     def normalise_llm_output(cls, data: dict) -> dict:
         """Normalise quirks from local models before Pydantic field mapping.
 
-        Local models (qwen3.5:9b etc.) diverge from the schema in two ways:
-        1. Uppercase keys: "TYPE" → "type"
+        Local models (qwen3.5:9b etc.) diverge from the schema in several ways:
+        1. Uppercase keys with spaces: "NARRATIVE REGISTER" → "narrative_register"
         2. Alternative field names: "research_summary" → "summary" etc.
         3. Single-element lists for scalar fields: ["Anti-SOGICE"] → "Anti-SOGICE"
         """
-        # 1. Lowercase all top-level keys
-        data = {k.lower(): v for k, v in data.items()}
+        # 1. Lowercase all top-level keys and replace spaces with underscores
+        #    "NARRATIVE REGISTER" → "narrative_register", "TYPE" → "type"
+        data = {k.lower().replace(" ", "_"): v for k, v in data.items()}
 
         # 2. Remap alternative field names the model commonly uses
         _key_aliases = {
@@ -155,14 +156,16 @@ class AnalysisResult(BaseModel):
                 data[new] = data.pop(old)
 
         # 3. Remap nested confidence fields:
-        #    confidence_model.overall       → confidence.overall_score
-        #    confidence_model.field_scores  → field_confidence (top-level)
+        #    .overall / .overall_score  → confidence.overall_score
+        #    .field_scores / .field-level → field_confidence (top-level)
         conf = data.get("confidence")
         if isinstance(conf, dict):
             if "overall" in conf and "overall_score" not in conf:
                 conf["overall_score"] = conf.pop("overall")
-            if "field_scores" in conf and "field_confidence" not in data:
-                data["field_confidence"] = conf.pop("field_scores")
+            for _fs_key in ("field_scores", "field-level", "field_level"):
+                if _fs_key in conf and "field_confidence" not in data:
+                    data["field_confidence"] = conf.pop(_fs_key)
+                    break
 
         # 4. Unwrap single-element lists for Literal scalar fields
         for key in ("type", "format", "scope", "narrative_register"):
