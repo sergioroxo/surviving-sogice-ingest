@@ -1,0 +1,206 @@
+# SurvivingSOGICE — Session Context
+
+PhD research archive studying SOGICE (Sexual Orientation and Gender Identity Change Efforts) in Europe. Ingests documents, classifies them with Claude, builds a living lexicon, and ultimately publishes a public archive. Stack: local Python runner → Sanity (source of truth) → Supabase (vectors) → Vercel (review/publish UI, deferred).
+
+---
+
+## Architecture (settled)
+
+**Option 2: Local Python CLI + Streamlit UI.** All compute is local. The runner is in `runner/`. Sanity and Vercel roles are unchanged.
+
+Key docs:
+- `01_project_docs/ARCHITECTURE_LOCAL_RUNNER_v1.0.md` — architecture decision, role boundaries, model stack, checkpoints
+- `01_project_docs/IMPLEMENTATION_PLAN_v1.0.md` — full phase plan (written for Vercel but phases 0-A/0-B/0-G and all prompt/schema tasks are still accurate)
+- `02_working_tools/Claude_Ingestion_Prompt.md` — ingestion-v3.1 system prompt + exact JSON output schema
+- `00_infrastructure/SANITY_SCHEMA_v1.0.md` — all 12 Sanity content types
+- `00_infrastructure/Entity_Registry_v1.1.md` — seed data for persons, orgs, laws, events
+
+---
+
+## Local Model Stack (MacBook Pro M4, 24 GB RAM)
+
+### Embedding
+| Task | Model | Notes |
+|---|---|---|
+| Embeddings | `qwen3-embedding:8b` via Ollama | Pinned 8b — run embed-test to confirm dimension |
+
+### Analysis — Three-tier local strategy (Codex recommendation)
+
+| Tier | Model | `--llm` flag | Use when |
+|---|---|---|---|
+| Default | `qwen3.5:9b` | `local` | Everyday processing; best multilingual + JSON reliability |
+| Heavy | `gemma-4-26B-A4B-it` | `local-heavy` | Long books, long SRTs, interpretive fields (tactic/harm/flags/summary/assets) |
+| Reasoning | `Ministral-3-14B-Reasoning-2512` | `local-reasoning` | Ambiguous docs; evidence justification; confidence scoring |
+| Primary | Claude API (`claude-sonnet-4-6`) | `claude` | Gold standard; required for Tier 1 final classification |
+
+**Deployment strategy (Codex):**
+- `qwen3.5:9b` as default local model — quality/speed/RAM balance
+- `gemma-4-26B-A4B-it` only for the hardest/longest documents (risk: 24 GB RAM pressure)
+- `Ministral-3-14B-Reasoning-2512` as reasoning comparison when a document is especially ambiguous
+
+> Run `ollama list` to verify exact model names installed on your machine.
+> Update `LOCAL_ANALYSIS_MODEL`, `LOCAL_ANALYSIS_MODEL_HEAVY`, `LOCAL_ANALYSIS_MODEL_REASONING` in `runner/.env` to match.
+
+### Other tools
+| Task | Tool |
+|---|---|
+| Transcription | `faster-whisper` (local) |
+| OCR | Tesseract |
+| Phase 2 semantic map | UMAP + HDBSCAN + BERTopic |
+
+Long transcripts (SRT, books >40k chars) default to `--llm local-heavy`.
+
+---
+
+## Open Questions
+
+| # | Question | Blocks |
+|---|---|---|
+| ~~**Q22**~~ | ~~Verify `qwen3-embedding:8b` output dimension~~ — **RESOLVED: 4096d** | ~~Phase 0-B~~ unblocked |
+| Q14 | JUST CHANGE™ ↔ i-Doc integration method | Phase 4 October build |
+| Q18 | Testimony removal formal protocol | Phase 3 publication |
+| Q23 | RAM usage of `gemma-4-26B-A4B-it` on M4 24 GB — test before setting as default for heavy docs | Phase 0.5 |
+
+**Q22 resolved (April 2026):** `qwen3-embedding:8b` output dimension = **4096d**
+Use `vector(4096)` in Supabase. Drop and recreate the table if it was created with `vector(2560)`.
+
+---
+
+## Build Checklist
+
+### Phase 0-A — Sanity Schema
+- [x] Create Sanity project (EU/Norwegian region) — project ID `eqg5bxk6`, dataset `production`
+- [x] Implement all 12 content types from `SANITY_SCHEMA_v1.0.md`
+- [x] Add `accessibleDefinition` field to `lexiconEntry` type
+- [x] Fix reserved type name: `document` → `sogiceDocument` across all schema files
+- [ ] Configure researcher + intern roles
+- [ ] Seed persons and organizations from `Entity_Registry_v1.1.md` (~15 persons, ~50 orgs)
+- [ ] Seed laws and events (~12 laws, ~10 events)
+- [ ] Seed `legalDefinition` records from `SOGICE_Ontology_v3.0.md` Part V (9 records)
+- [ ] Seed `exclusionClause` records (6 records, linked to legalDefinitions)
+- [ ] Test round-trip: create a document record, verify all fields persist
+- [ ] Export seed JSON snapshot to `03_data/sanity_seed_YYYY-MM-DD.json`
+
+### Phase 0-B — Supabase Schema
+- [x] **Q22 resolved** — `qwen3-embedding:8b` = **4096d** → use `vector(4096)`
+- [x] Create Supabase project (EU region)
+- [x] Enable pgvector extension
+- [ ] **Recreate `document_embeddings` table with `vector(4096)`** — drop old `vector(2560)` table first
+- [x] ~~Create ivfflat index~~ — **deferred to Phase 2** (sequential scan fine at pilot scale)
+- [x] Add `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` to `runner/.env`
+- [ ] **Run `python3 -m runner embed-test`** — verify Ollama is running + embedding dimension
+- [ ] **Test full pipeline end-to-end** — ingest one URL → verify Sanity record + Supabase row created
+
+### MVP CLI Runner (`runner/`)
+- [x] Project skeleton (`main.py`, `config.py`, `models/`, `pipeline/`, `clients/`)
+- [x] Pydantic models for ingestion-v3.1 output schema (`models/document.py`)
+- [x] `requirements.txt` + `.env.example`
+- [x] **`pipeline/intake.py`** — URL/file detection, doc_id, Wayback Machine, deduplication check
+- [x] **`pipeline/preprocess.py`** — Docling (PDF), Trafilatura (URL+full HTML intel), yt-dlp + faster-whisper (video)
+- [x] **`pipeline/embed.py`** — Ollama qwen3-embedding:4b, legacy endpoint fallback
+- [x] **`pipeline/analyze.py`** — Claude + Ollama + OpenRouter routing, lexicon injection, Pydantic validation
+- [x] **`pipeline/review.py`** — Rich terminal checkpoints 1–4, edit-JSON with retry loop
+- [x] **`pipeline/upload.py`** — Sanity REST write + Supabase insert + local save + audit log
+- [x] **`clients/sanity.py`** — httpx Sanity Content API, referencedUrls builder
+- [x] **`clients/supabase.py`** — supabase-py upsert
+- [x] Configurable truncation (`--max-chars`, per-LLM defaults in `.env`)
+- [x] OpenRouter LLM option (`--llm openrouter`)
+- [x] Confidence score auto-derivation when LLM omits overall_score
+- [x] Source deduplication warning before intake
+- [ ] **Three-tier local model routing** (`--llm local-heavy`, `--llm local-reasoning`)
+- [ ] **End-to-end test**: one URL ingested + uploaded to Sanity + Supabase ← **next milestone**
+
+### Phase 0.5 — Pilot Batch
+- [ ] Pull and verify local models: `ollama pull qwen3.5:9b` + `gemma-4-26B-A4B-it` (check RAM)
+- [ ] Run 10–20 documents covering all 6 languages + all tiers
+- [ ] Calibrate confidence thresholds (baseline: high ≥0.85, medium 0.70–0.84, low <0.70)
+- [ ] Calibrate validation triggers
+- [ ] Test lexicon Track B (approve ≥5 candidate terms)
+- [ ] Test model-agnostic export + reimport
+- [ ] Measure RAM/time for `gemma-4-26B-A4B-it` to settle Q23
+
+### Phase 1 — Full Ingestion Pipeline
+- [ ] Validation batch system
+- [ ] Review queue (Streamlit or Vercel `/review/queue`)
+- [ ] Lexicon Track B UI
+- [ ] JSON export to GitHub per batch
+
+### Streamlit Web UI (Phase 0.5 parallel)
+- [ ] `runner/app.py` — Streamlit wrapper around same pipeline functions
+- [ ] Markdown preview tab
+- [ ] Candidate term approval forms
+- [ ] JSON diff viewer (Claude vs local LLM)
+- [ ] RAM / processing time monitor (to evaluate heavy models — resolves Q23)
+
+### Deferred
+- [ ] Vercel app (Phase 1–2)
+- [ ] Phase 2: UMAP / HDBSCAN / BERTopic / pgvector activation
+- [ ] Phase 3: Public archive + SOGICE Wikipedia
+- [ ] Phase 4: JUST CHANGE™ + i-Doc
+
+---
+
+## Runner Quick Reference
+
+```bash
+# Install
+cd runner && pip3 install -r requirements.txt
+cp .env.example .env  # fill in API keys
+
+# Verify Ollama embedding (do before first ingest)
+python3 -m runner embed-test
+
+# Ingest
+python3 -m runner ingest https://example.org/document            # Claude (default quality)
+python3 -m runner ingest https://example.org/document --llm local           # qwen3.5:9b
+python3 -m runner ingest document.pdf --llm local-heavy          # gemma-4-26B heavy
+python3 -m runner ingest ambiguous.pdf --llm local-reasoning     # Ministral reasoning
+python3 -m runner ingest recording.mp4 --llm local-heavy         # long transcript
+python3 -m runner ingest document.pdf --llm both                 # Claude + local, shows diff
+python3 -m runner ingest https://example.org --llm openrouter    # free OpenRouter model
+
+python3 -m runner status                    # show locally saved, not yet uploaded
+python3 -m runner upload-doc <doc_id>       # push a saved document to Sanity + Supabase
+python3 -m runner export batch-07           # export batch JSON to exports/batch-07/
+```
+
+---
+
+## Known Issues / Gotchas
+
+- **Sanity type name**: custom document schema is `sogiceDocument` (not `document` — Sanity built-in conflict)
+- **Python on macOS**: use `python3` / `pip3`, not `python` (ships as Python 2.7)
+- **Free OpenRouter models**: weaker on Pro/Anti-SOGICE classification — use `--llm claude` for Tier 1 docs or manually correct at Checkpoint 3 (`e` → edit JSON → change `type` field)
+- **Ollama model names**: verify with `ollama list` before setting in `.env`; heavy models may require `--max-chars 0` for full context
+
+---
+
+## File Map
+
+```
+runner/
+├── main.py               # Typer CLI entry point — all commands
+├── config.py             # .env loading, Config dataclass
+├── models/
+│   └── document.py       # Pydantic models for ingestion-v3.1 output schema
+├── pipeline/
+│   ├── intake.py         # Stage 1: source detection, doc_id, Wayback, dedup
+│   ├── preprocess.py     # Stage 2: Docling / Trafilatura / yt-dlp / Whisper + HTML intel
+│   ├── embed.py          # Stage 3a: qwen3-embedding:4b via Ollama
+│   ├── analyze.py        # Stage 3b: Claude / Ollama (3-tier) / OpenRouter routing
+│   ├── review.py         # Checkpoints 1–4: Rich terminal UI
+│   └── upload.py         # Stage 5: Sanity write + Supabase insert + local save
+└── clients/
+    ├── sanity.py         # httpx Sanity Content API client
+    └── supabase.py       # supabase-py wrapper
+
+00_infrastructure/        # Entity registry, lexicon, ontology, Sanity schema
+01_project_docs/          # PRD, implementation plan, architecture decision
+02_working_tools/         # Ingestion + validation prompts, tagging guide
+03_data/                  # Seed data exports, term additions
+exports/                  # Per-batch JSON exports (gitignored if large)
+```
+
+---
+
+*Active branch: `claude/review-architecture-70CUm`*
