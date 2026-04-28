@@ -28,8 +28,9 @@ def run(
     tier: Optional[int],
     batch: Optional[str],
     config: Config,
+    force_doc_id: Optional[str] = None,
 ) -> IntakeResult:
-    doc_id      = _generate_doc_id()
+    doc_id      = force_doc_id or _generate_doc_id()
     source_type = _detect_source_type(source)
     assigned_tier = tier if tier is not None else _auto_assign_tier(source_type)
     batch_id    = batch or "unassigned"

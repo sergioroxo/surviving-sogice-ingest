@@ -36,22 +36,36 @@ def ingest(
     """Full ingestion pipeline: intake → preprocess → embed → classify → review → upload."""
     config = load_config(llm=llm)
 
-    # Deduplication check — warn researcher if this source was already ingested
+    # Deduplication check — offer update-in-place or new document
+    _force_doc_id: str | None = None
     if not yes:
         existing = intake.find_existing_by_source(source, config)
-        for ex in existing:
+        if existing:
+            # Show most recent match
+            ex = existing[-1]
             status_label = "(uploaded to Sanity)" if ex.get("uploaded") else "(local only)"
             console.print(Panel(
                 f"[yellow]Already ingested as [bold]{ex['doc_id']}[/bold] {status_label}[/yellow]\n"
                 f"Batch: {ex.get('batch_id', '?')}  |  "
                 f"Archive: {ex.get('archive_url') or 'none'}",
-                title="Duplicate source detected",
+                title=f"Duplicate source detected ({len(existing)} existing)",
             ))
-        if existing and not typer.confirm("Ingest again as a new document?", default=False):
-            raise typer.Exit()
+            console.print(
+                "  [bold]u[/bold] = update existing record (re-run analysis, overwrite Sanity + Supabase)\n"
+                "  [bold]n[/bold] = create new document with a fresh doc_id\n"
+                "  [bold]a[/bold] = abort"
+            )
+            choice = typer.prompt("Choice", default="u").strip().lower()
+            if choice == "a":
+                raise typer.Exit()
+            elif choice == "u":
+                _force_doc_id = ex["doc_id"]
+                console.print(f"[dim]Re-using doc_id {_force_doc_id}[/dim]")
+            # "n" falls through to generate a new doc_id as normal
 
     # Stage 1 — Intake
-    intake_result = intake.run(source, tier=tier, batch=batch, config=config)
+    intake_result = intake.run(source, tier=tier, batch=batch, config=config,
+                               force_doc_id=_force_doc_id)
     if not yes and not review.checkpoint_intake(intake_result):
         raise typer.Exit()
 

@@ -24,12 +24,11 @@ def upsert_embedding(
     """Insert or update a row in document_embeddings."""
     client = _client(config)
     client.table("document_embeddings").upsert({
-        "doc_id":     doc_id,
-        "embedding":  vector,
-        "doc_type":   analysis.type,
-        "scope":      analysis.scope,
-        "country":    analysis.country,
-        "confidence": analysis.confidence.overall_score,
+        "doc_id":   doc_id,
+        "embedding": vector,
+        "doc_type":  analysis.type,
+        "scope":     analysis.scope,
+        "country":   analysis.country,
     }).execute()
 
 
