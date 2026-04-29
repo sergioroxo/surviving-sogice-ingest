@@ -229,7 +229,7 @@ def verify_uploads(limit: int, config: Config) -> None:
     try:
         query = (
             f'*[_type == "sogiceDocument"] | order(_createdAt desc)[0..{limit - 1}]'
-            '{ _id, classification.type, workflowStatus, _createdAt, meta.sourceUrl }'
+            '{ _id, "docType": classification.type, workflowStatus, _createdAt, "sourceUrl": meta.sourceUrl }'
         )
         url = (
             f"https://{config.sanity_project_id}.api.sanity.io"
@@ -253,8 +253,7 @@ def verify_uploads(limit: int, config: Config) -> None:
         sb = create_client(config.supabase_url, config.supabase_service_key)
         resp = (
             sb.table("document_embeddings")
-            .select("doc_id, doc_type, created_at")
-            .order("created_at", desc=True)
+            .select("doc_id, doc_type, scope")
             .limit(limit)
             .execute()
         )
@@ -274,7 +273,7 @@ def verify_uploads(limit: int, config: Config) -> None:
             created = (d.get("_createdAt") or "")[:19].replace("T", " ")
             t.add_row(
                 d.get("_id", ""),
-                d.get("type", "?"),
+                d.get("docType", "?"),
                 d.get("workflowStatus", "?"),
                 created,
                 d.get("sourceUrl", ""),
@@ -288,10 +287,9 @@ def verify_uploads(limit: int, config: Config) -> None:
         t2 = Table(title=f"Supabase — last {len(supabase_rows)} embeddings")
         t2.add_column("doc_id")
         t2.add_column("type")
-        t2.add_column("created")
+        t2.add_column("scope")
         for row in supabase_rows:
-            created = (row.get("created_at") or "")[:19].replace("T", " ")
-            t2.add_row(row.get("doc_id", ""), row.get("doc_type", "?"), created)
+            t2.add_row(row.get("doc_id", ""), row.get("doc_type", "?"), row.get("scope", "?"))
         console.print(t2)
     else:
         console.print("[yellow]No rows found in Supabase document_embeddings.[/yellow]")
@@ -309,6 +307,7 @@ def verify_uploads(limit: int, config: Config) -> None:
         console.print("\n[green]✓ All Sanity records also present in Supabase.[/green]")
 
 
+def _write_audit_event(doc_dir: Path, event: str) -> None:
     from datetime import datetime, timezone
     ts = datetime.now(timezone.utc).isoformat()
     with (doc_dir / "audit.log").open("a", encoding="utf-8") as f:
